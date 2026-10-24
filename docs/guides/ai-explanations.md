@@ -12,7 +12,11 @@ export ANTHROPIC_API_KEY=sk-ant-...
 openpipeline serve path/to/project
 ```
 
-The Docker image does not include the extra. Use pip for this feature.
+The Docker image already includes the extra. Pass the key in:
+
+```bash
+docker run --rm -p 8484:8484 -e ANTHROPIC_API_KEY -v "$PWD:/project" ghcr.io/pawanpatil19/openpipeline
+```
 
 Then select a model and click **Explain with AI**. The panel shows a short
 summary in plain words and a list of things worth double-checking. Click **Ask

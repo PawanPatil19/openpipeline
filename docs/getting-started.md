@@ -39,8 +39,8 @@ it never touches your files. It already has an agent proposal waiting in the
     ```
 
     Run this from your dbt project folder. The image includes the sample rows
-    extra but not the AI one. To use [AI explanations](guides/ai-explanations.md)
-    in Docker, install with pip instead.
+    and AI extras. For [AI explanations](guides/ai-explanations.md), pass your
+    key with `-e ANTHROPIC_API_KEY`.
 
 === "Docker Compose"
 
