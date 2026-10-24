@@ -18,6 +18,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages/core packages/core
 COPY apps/server apps/server
+# The wheel normally carries the example for `openpipeline demo`; this build does not go through the sdist.
+COPY examples/jaffle_shop apps/server/src/openpipeline/_example
 COPY --from=web /src/apps/server/src/openpipeline/static apps/server/src/openpipeline/static
 RUN uv sync --locked --no-dev --no-editable --package openpipeline --extra preview
 

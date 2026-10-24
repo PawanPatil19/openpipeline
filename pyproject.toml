@@ -28,6 +28,9 @@ dev = [
     "types-PyYAML>=6.0",
     "pre-commit>=4.0",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+]
 
 [tool.ruff]
 line-length = 100

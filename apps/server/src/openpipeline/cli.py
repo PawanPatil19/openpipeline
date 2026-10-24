@@ -311,3 +311,32 @@ def lineage(
             typer.echo("  nothing found")
         for ref in refs:
             typer.echo(f"  {ref.node}.{ref.column}")
+
+
+@app.command()
+def demo(
+    directory: Annotated[
+        Path | None,
+        typer.Option("--dir", help="Copy the example here instead of a temporary folder."),
+    ] = None,
+    host: Annotated[str, typer.Option(envvar="OPENPIPELINE_HOST")] = "127.0.0.1",
+    port: Annotated[int, typer.Option(envvar="OPENPIPELINE_PORT")] = 8484,
+    serve_it: Annotated[
+        bool,
+        typer.Option("--serve/--no-serve", help="Start the server, or just prepare the folder."),
+    ] = True,
+) -> None:
+    """Try everything: the example project plus a proposal waiting for your review."""
+    from openpipeline.demo import prepare_demo
+
+    try:
+        root, _ = prepare_demo(directory)
+    except FileExistsError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    if not serve_it:
+        typer.echo(str(root))
+        return
+    typer.echo(f"Demo project: {root}")
+    typer.echo("An agent proposal is waiting for you in the Proposals tab.")
+    serve(root, host=host, port=port, reload=False)
