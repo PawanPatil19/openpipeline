@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: PawanPatil19/openpipeline/actions/pr-summary@v0
+      - uses: PawanPatil19/openpipeline/actions/pr-summary@v1.0.0
         with:
           project-dir: .   # where dbt_project.yml lives
 ```
@@ -30,7 +30,7 @@ jobs:
 Add a short plain-words paragraph at the top of the comment, written by Claude.
 
 ```yaml
-      - uses: PawanPatil19/openpipeline/actions/pr-summary@v0
+      - uses: PawanPatil19/openpipeline/actions/pr-summary@v1.0.0
         with:
           ai: "true"
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

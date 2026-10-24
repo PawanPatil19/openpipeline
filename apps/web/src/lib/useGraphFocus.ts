@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FocusRequest } from "../components/FocusNode";
 import { api, type Graph, type GraphNode, type SearchHit } from "./api";
 import type { ColumnFocus, ColumnSelection } from "./columnFocus";
@@ -31,6 +31,13 @@ export function useGraphFocus(graph: Graph | undefined, onNodeChosen?: () => voi
     return ids;
   }, [activeColumn, lineage.data]);
 
+  // Once a column's lineage is known, bring the whole path into view, not just the node.
+  useEffect(() => {
+    if (!activeColumn || !highlightIds) return;
+    const ids = [...highlightIds];
+    setFocus((f) => ({ id: activeColumn.nodeId, ids, seq: (f?.seq ?? 0) + 1 }));
+  }, [activeColumn, highlightIds]);
+
   const setSelected = useCallback((node: GraphNode | null) => {
     setSelectedNode(node);
     setSelection(null);
@@ -44,12 +51,14 @@ export function useGraphFocus(graph: Graph | undefined, onNodeChosen?: () => voi
       }
       const node = graph?.nodes.find((n) => n.id === next.nodeId);
       if (!node) return;
+      // Picking a column of the node that is already open: the path fit below is enough.
+      const sameNode = node.id === selected?.id;
       setSelectedNode(node);
       setSelection(next);
-      setFocus((f) => ({ id: node.id, seq: (f?.seq ?? 0) + 1 }));
+      if (!sameNode) setFocus((f) => ({ id: node.id, seq: (f?.seq ?? 0) + 1 }));
       onNodeChosen?.();
     },
-    [graph, onNodeChosen],
+    [graph, onNodeChosen, selected],
   );
 
   const pickHit = useCallback(

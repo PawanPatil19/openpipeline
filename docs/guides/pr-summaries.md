@@ -31,13 +31,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: PawanPatil19/openpipeline/actions/pr-summary@v0
+      - uses: PawanPatil19/openpipeline/actions/pr-summary@v1.0.0
         with:
           project-dir: .   # where dbt_project.yml lives
 ```
 
-That is all. There is no AI in this version, nothing leaves the runner, and no
-secret is needed.
+That is all. By default there is no AI, nothing leaves the runner, and no secret
+is needed.
+
+The action installs OpenPipeline from its own tag, so the tag you pick decides
+which version runs. Pin a full version such as `@v1.0.0`.
 
 The summary is also written to the job's summary page, so it is useful even if you
 turn comments off with `comment: "false"`.
@@ -48,7 +51,7 @@ To add a short plain-words paragraph at the top of the comment, turn on `ai` and
 pass an Anthropic API key stored as a repository secret:
 
 ```yaml
-      - uses: PawanPatil19/openpipeline/actions/pr-summary@v0
+      - uses: PawanPatil19/openpipeline/actions/pr-summary@v1.0.0
         with:
           ai: "true"
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -1,9 +1,17 @@
 # openpipeline
 
-The OpenPipeline app: a command line tool, a web server with the graph UI, and
-an MCP server for AI agents. See the [main README](../../README.md).
+See what your dbt project does, in plain English, and review every change before
+it lands. This package is the OpenPipeline app: a command line tool, a web server
+with the graph UI, and an MCP server for AI agents.
 
 ```bash
 pip install openpipeline
-openpipeline serve path/to/your/dbt/project
+openpipeline demo                                   # try it on an example project
+openpipeline serve path/to/your/dbt/project         # use it on yours
 ```
+
+Optional extras: `openpipeline[ai]` for AI explanations with your own Anthropic key,
+and `openpipeline[preview]` for sample rows run locally with DuckDB.
+
+Documentation: <https://pawanpatil19.github.io/openpipeline/>
+Source and issues: <https://github.com/PawanPatil19/openpipeline>

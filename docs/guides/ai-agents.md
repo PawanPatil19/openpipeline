@@ -49,7 +49,8 @@ files until a person accepts.
 ## The propose, review, accept loop
 
 1. **The agent reads.** It calls `explain` to understand a model, `impact_of` to
-   see what depends on it, and `list_rules` to learn which business rules exist.
+   see what depends on it, `column_lineage` before it touches a column, and
+   `list_rules` to learn which business rules exist.
 2. **The agent checks its work.** It calls `preview_change` with the new file
    contents. This is a dry run. It reports new warnings and the models that would
    be affected, so the agent can fix mistakes before you see them.
@@ -62,7 +63,8 @@ files until a person accepts.
 
     ![A proposal shown on the graph](../assets/review.png)
 
-5. **You decide.** Accept, or reject with a reason. You can also leave comments.
+5. **You decide.** Press **Accept and write files**, or **Reject** with a reason.
+   You can also leave comments.
    The agent reads them with `get_proposal`.
 6. **The agent revises.** If you asked for changes, it calls `propose_change`
    again with `revises` set to the old proposal. The old one is marked
@@ -95,6 +97,10 @@ so you can read, commit, or delete them by hand.
 | `propose_docs` | Propose a new model description or column descriptions. | `model`, `description`, `columns`, `rationale`, `author` |
 | `get_proposal` | A proposal's status and the comments people left on it. Poll after proposing. | `id` |
 | `list_proposals` | All proposals and whether each is pending, accepted, rejected, or superseded. | none |
+
+Defaults: `limit` is `10` for `sample_rows` (up to 200) and `20` for `search`, and
+`author` is `agent`. `get_proposal` and `list_proposals` report status as
+`pending`, `accepted`, `rejected`, or `superseded`.
 
 `files` is always a list of `{"path": "...", "content": "..."}` with the *full*
 new content of each file, relative to the project root. Empty content deletes the

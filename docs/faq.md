@@ -17,8 +17,9 @@ if you want the manifest, which is more accurate for projects that use macros.
 ### The graph is out of date
 
 If you use the manifest, it is a snapshot from the last time dbt ran. Run
-`dbt parse` again. If you use plain files, the page reloads its data when files
-change. Refresh the browser tab if it still looks stale.
+`dbt parse` again. If you use plain files, the server reads them again when they
+change, and the page fetches fresh data when you switch back to its tab. Refresh
+the browser tab if it still looks stale.
 
 ### Do I need dbt installed, or warehouse credentials?
 
@@ -68,7 +69,7 @@ Lineage is read from the SQL. A column that comes from a macro, or from a
 
 ### The Explain with AI button is missing or disabled
 
-The panel shows the reason. The usual ones are: the extra is not installed
+When AI is off, the model panel says why at the bottom. The usual reasons are: the extra is not installed
 (`pip install 'openpipeline[ai]'`), no key is set (`ANTHROPIC_API_KEY`), or
 `OPENPIPELINE_AI=off`.
 

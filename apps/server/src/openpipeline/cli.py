@@ -130,7 +130,7 @@ def explain(
     project_dir: ProjectDir = Path("."),
     as_json: Annotated[bool, typer.Option("--json")] = False,
     ai: Annotated[
-        bool, typer.Option("--ai", help="Also ask Claude to explain it (needs openpipeline[ai]).")
+        bool, typer.Option("--ai", help="Also ask Claude to explain it (needs openpipeline\\[ai]).")
     ] = False,
 ) -> None:
     """Explain a model in plain English."""

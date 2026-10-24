@@ -11,7 +11,12 @@ folder that holds `dbt_project.yml`. It defaults to the current folder, or to
 `OPENPIPELINE_PROJECT_DIR` if that is set.
 
 Exit codes: `0` on success, `1` when a model or column you named does not exist or
-a preview fails, and `2` when the project cannot be loaded.
+a preview fails, and `2` when the project cannot be loaded or an option has a bad
+value.
+
+Options for sample rows and the SQL dialect can also be set once in the `preview:`
+section of [`openpipeline.yml`](configuration.md#openpipelineyml). A flag wins over an
+environment variable, and an environment variable wins over the file.
 
 ## openpipeline demo
 
@@ -86,6 +91,8 @@ Print the model graph as JSON.
 openpipeline graph [PROJECT]
 ```
 
+The output has a `nodes` list and an `edges` list.
+
 ## openpipeline lineage
 
 Show where a column comes from and where it is used. See
@@ -94,6 +101,10 @@ Show where a column comes from and where it is used. See
 ```bash
 openpipeline lineage MODEL COLUMN [PROJECT] [--json]
 ```
+
+Prints the columns it comes from and the columns that use it, nearest first. With
+`--json` it prints the same data as the HTTP API. It exits with `1` if the model or
+column does not exist.
 
 ## openpipeline sample
 
@@ -117,6 +128,9 @@ List [business rules](../guides/business-rules.md), grouped by owner.
 ```bash
 openpipeline rules [PROJECT] [--json]
 ```
+
+Warnings about the rules file, such as a link to a model that does not exist, are
+printed to standard error.
 
 ## openpipeline review
 

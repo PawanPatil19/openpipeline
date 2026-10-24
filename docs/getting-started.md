@@ -38,8 +38,9 @@ it never touches your files. It already has an agent proposal waiting in the
     docker run --rm -p 8484:8484 -v "$PWD:/project" ghcr.io/pawanpatil19/openpipeline
     ```
 
-    Run this from your dbt project folder. The image already includes the AI and
-    sample rows extras.
+    Run this from your dbt project folder. The image includes the sample rows
+    and AI extras. For [AI explanations](guides/ai-explanations.md), pass your
+    key with `-e ANTHROPIC_API_KEY`.
 
 === "Docker Compose"
 
@@ -64,8 +65,9 @@ openpipeline serve ~/code/my-dbt-project
 If you leave the path out, it uses the current folder, or the folder in the
 `OPENPIPELINE_PROJECT_DIR` environment variable.
 
-The page reloads its data on its own when you edit a SQL, YAML, or CSV file, so
-you can keep your editor open next to it.
+The server notices when you edit a SQL, YAML, or CSV file and reads the project
+again on the next request. The page fetches fresh data when you switch back to
+its browser tab, so you can keep your editor open next to it.
 
 ## Manifest or files
 
