@@ -75,7 +75,11 @@ def _load_from_manifest(root: Path, config: dict[str, Any], manifest_path: Path)
             materialized=(raw.get("config") or {}).get("materialized"),
             depends_on=list((raw.get("depends_on") or {}).get("nodes", [])),
             columns=[
-                Column(name=c.get("name", n), description=c.get("description") or "")
+                Column(
+                    name=c.get("name", n),
+                    description=c.get("description") or "",
+                    meta=dict(c.get("meta") or (c.get("config") or {}).get("meta") or {}),
+                )
                 for n, c in (raw.get("columns") or {}).items()
             ],
             tags=list(raw.get("tags") or []),
@@ -90,7 +94,11 @@ def _load_from_manifest(root: Path, config: dict[str, Any], manifest_path: Path)
             description=raw.get("description") or "",
             path=raw.get("original_file_path"),
             columns=[
-                Column(name=c.get("name", n), description=c.get("description") or "")
+                Column(
+                    name=c.get("name", n),
+                    description=c.get("description") or "",
+                    meta=dict(c.get("meta") or (c.get("config") or {}).get("meta") or {}),
+                )
                 for n, c in (raw.get("columns") or {}).items()
             ],
             meta=dict(raw.get("meta") or {}),
@@ -223,7 +231,12 @@ def _column(raw: dict[str, Any]) -> Column:
             tests.append(t)
         elif isinstance(t, dict) and t:
             tests.append(next(iter(t)))
-    return Column(name=raw["name"], description=raw.get("description") or "", tests=tests)
+    return Column(
+        name=raw["name"],
+        description=raw.get("description") or "",
+        tests=tests,
+        meta=dict(raw.get("meta") or (raw.get("config") or {}).get("meta") or {}),
+    )
 
 
 def _folder_materialization(

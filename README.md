@@ -13,6 +13,9 @@ people who wrote the SQL, a way to understand and review it:
 - **PR summaries.** A GitHub Action that comments on pull requests with what
   changed in business terms, which other models are affected, and which owners
   to loop in.
+- **Business rules.** Name the rules buried in your SQL, give each an owner,
+  and link them to the models and columns that implement them. Pull request
+  summaries flag every rule a change touches.
 - **MCP server for AI agents.** Agents such as Claude can read the project and
   *propose* changes. Proposals show up in the UI, and nothing is written to your
   dbt files until a person accepts them.
@@ -55,6 +58,7 @@ openpipeline serve [PROJECT]            # web UI and API on :8484
 openpipeline explain customers [PROJECT] # explain one model in the terminal
 openpipeline explain customers --ai     # add an AI explanation (see below)
 openpipeline graph [PROJECT]            # print the model graph as JSON
+openpipeline rules [PROJECT]            # business rules, grouped by owner
 openpipeline review BASE HEAD           # Markdown summary of the change between two versions
 openpipeline review BASE HEAD --ai      # same, with a plain-words overview at the top
 openpipeline mcp [PROJECT]              # MCP server over stdio for local agents
@@ -72,8 +76,8 @@ claude mcp add openpipeline -- openpipeline mcp /path/to/dbt/project
 ```
 
 The agent gets these tools: `list_models`, `get_model`, `explain`, `impact_of`,
-`preview_change`, `propose_change`, `propose_docs`, `get_proposal`, and
-`list_proposals`. It can look at everything, but it can only propose edits.
+`list_rules`, `preview_change`, `propose_change`, `propose_docs`,
+`get_proposal`, and `list_proposals`. It can look at everything, but it can only propose edits.
 Nothing is written until you accept.
 
 The review loop works like this:
@@ -136,6 +140,26 @@ the button or pass `--ai`. Nothing is sent otherwise.
 Answers are cached in `.openpipeline/cache/ai` inside your project, so asking
 again about an unchanged model costs nothing. Add `.openpipeline/` to your
 `.gitignore`.
+
+## Business rules
+
+Write rules in `openpipeline.yml` at the root of your dbt project:
+
+```yaml
+rules:
+  - id: lifetime-value
+    name: Lifetime value is what a customer has paid
+    description: The total a customer has paid us, in dollars, across all orders.
+    owner: growth-team
+    applies_to:
+      - model: customers
+        columns: [lifetime_value]
+```
+
+You can also link from dbt's own YAML with `meta: {rules: [lifetime-value]}` on
+a model or a column. The **Rules** tab lists every rule, the model panel shows
+the rules a model carries, and PR summaries list the rules a change touches and
+the owners to loop in. See [docs/rules.md](docs/rules.md).
 
 ## PR summaries on GitHub
 

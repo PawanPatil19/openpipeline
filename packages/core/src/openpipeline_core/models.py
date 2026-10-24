@@ -23,6 +23,7 @@ class Column(BaseModel):
     name: str
     description: str = ""
     tests: list[str] = Field(default_factory=list)
+    meta: dict[str, Any] = Field(default_factory=dict)
 
 
 class Node(BaseModel):

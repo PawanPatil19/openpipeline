@@ -14,12 +14,12 @@ import type { Graph, GraphNode, NodeStatus } from "../lib/api";
 import { layoutGraph, lineage, NODE_HEIGHT, NODE_WIDTH } from "../lib/layout";
 
 type PipelineNode = Node<
-  { node: GraphNode; dimmed: boolean; selected: boolean; status?: NodeStatus },
+  { node: GraphNode; dimmed: boolean; selected: boolean; status?: NodeStatus; hasRules: boolean },
   "pipeline"
 >;
 
 function PipelineNodeView({ data }: NodeProps<PipelineNode>) {
-  const { node, dimmed, selected, status } = data;
+  const { node, dimmed, selected, status, hasRules } = data;
   return (
     <div
       className={`pnode pnode--${node.kind}${dimmed ? " is-dimmed" : ""}${selected ? " is-selected" : ""}${status ? ` pnode--${status}` : ""}`}
@@ -30,6 +30,11 @@ function PipelineNodeView({ data }: NodeProps<PipelineNode>) {
       <Handle type="target" position={Position.Left} isConnectable={false} />
       <span className="pnode__kind">{node.materialized ?? node.kind}</span>
       <span className="pnode__name">{node.name}</span>
+      {hasRules && (
+        <span className="pnode__rules" role="img" aria-label="Implements a business rule">
+          R
+        </span>
+      )}
       <Handle type="source" position={Position.Right} isConnectable={false} />
     </div>
   );
@@ -56,9 +61,11 @@ interface Props {
   onSelect: (node: GraphNode | null) => void;
   /** Review mode: colour nodes by how a proposal would change them, keyed by node id. */
   statuses?: Record<string, NodeStatus>;
+  /** Names of models that implement at least one business rule. */
+  ruleModels?: ReadonlySet<string>;
 }
 
-export function GraphView({ graph, selectedId, onSelect, statuses }: Props) {
+export function GraphView({ graph, selectedId, onSelect, statuses, ruleModels }: Props) {
   const positions = useMemo(() => layoutGraph(graph), [graph]);
   const highlighted = useMemo(
     () => (selectedId ? lineage(graph, selectedId) : null),
@@ -78,6 +85,7 @@ export function GraphView({ graph, selectedId, onSelect, statuses }: Props) {
         dimmed: highlighted !== null && !highlighted.has(n.id),
         selected: n.id === selectedId,
         status: statuses?.[n.id],
+        hasRules: ruleModels?.has(n.name) ?? false,
       },
     };
   });

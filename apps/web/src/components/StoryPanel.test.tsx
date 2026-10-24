@@ -54,6 +54,7 @@ function setup({ aiAvailable = true, aiFails = false }: Setup = {}) {
       const method = init?.method ?? "GET";
       const body = init?.body ? JSON.parse(String(init.body)) : undefined;
       calls.push({ method, url, body });
+      if (url.endsWith("/rules")) return json([]);
       if (url.endsWith("/story")) return json(story);
       if (url.endsWith("/impact"))
         return json({ model: "customers", upstream: [], downstream: ["report"] });

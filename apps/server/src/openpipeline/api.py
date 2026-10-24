@@ -18,9 +18,11 @@ from openpipeline.state import ProjectState
 from openpipeline_core import (
     ChangePreview,
     DocsUpdate,
+    ModelRule,
     ModelStory,
     Node,
     NodeKind,
+    Rule,
     explain_model,
     preview_changes,
     update_docs,
@@ -42,6 +44,11 @@ class Impact(BaseModel):
     model: str
     upstream: list[str]
     downstream: list[str]
+
+
+class RulesResponse(BaseModel):
+    rules: list[Rule]
+    warnings: list[str]
 
 
 class StatusUpdate(BaseModel):
@@ -84,7 +91,7 @@ def create_app(
             loaded_from=p.loaded_from,
             model_count=len(p.models()),
             source_count=sum(1 for n in p.nodes.values() if n.kind.value == "source"),
-            warnings=p.warnings,
+            warnings=[*p.warnings, *state.rules().warnings],
         )
 
     @app.get("/api/graph")
@@ -141,6 +148,16 @@ def create_app(
             upstream=[p.nodes[u].name for u in g.upstream(node.unique_id)],
             downstream=[p.nodes[u].name for u in g.downstream(node.unique_id)],
         )
+
+    @app.get("/api/rules")
+    def rules() -> RulesResponse:
+        registry = state.rules()
+        return RulesResponse(rules=registry.rules, warnings=registry.warnings)
+
+    @app.get("/api/models/{name}/rules")
+    def model_rules(name: str) -> list[ModelRule]:
+        node = node_or_404(name)
+        return state.rules().applied_to(node.name)
 
     @app.get("/api/proposals")
     def list_proposals(status: Status | None = None) -> list[Proposal]:

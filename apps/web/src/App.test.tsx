@@ -13,6 +13,7 @@ const responses: Record<string, unknown> = {
     warnings: [],
   },
   "/api/graph": { nodes: [], edges: [] },
+  "/api/rules": { rules: [], warnings: [] },
   "/api/proposals": [
     {
       id: "abc123abc123",

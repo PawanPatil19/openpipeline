@@ -29,6 +29,7 @@ def test_tools_are_registered(project_dir: Path) -> None:
         "explain",
         "impact_of",
         "preview_change",
+        "list_rules",
         "propose_change",
         "get_proposal",
         "propose_docs",

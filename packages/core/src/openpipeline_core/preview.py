@@ -28,6 +28,7 @@ from openpipeline_core.diff import ProjectDiff, diff_projects
 from openpipeline_core.graph import ModelGraph
 from openpipeline_core.loader import load_project
 from openpipeline_core.models import NodeKind, Project
+from openpipeline_core.rules import load_rules
 from openpipeline_core.story import explain_model
 
 FileChangeKind = Literal["added", "modified", "deleted"]
@@ -91,8 +92,9 @@ def preview_changes(project_root: str | Path, changes: Iterable[tuple[str, str]]
         shutil.copytree(root, copy, ignore=shutil.ignore_patterns(*SKIP_DIRS))
         files = [_apply(root, copy, path, content) for path, content in pairs]
         after = load_project(copy, prefer_manifest=False)
+        after_rules = load_rules(copy, after)
 
-    diff = diff_projects(before, after)
+    diff = diff_projects(before, after, base_rules=load_rules(root, before), head_rules=after_rules)
     statuses = _node_statuses(before, after)
     before_set = set(before.warnings)
     new_warnings = [w for w in after.warnings if w not in before_set]
@@ -105,7 +107,7 @@ def preview_changes(project_root: str | Path, changes: Iterable[tuple[str, str]]
         graph=graph,
         new_warnings=new_warnings,
         parse_errors=parse_errors,
-        summary=_summary(graph, new_warnings, parse_errors),
+        summary=_summary(graph, new_warnings, parse_errors, diff),
     )
 
 
@@ -196,7 +198,10 @@ def _merged_graph(
 
 
 def _summary(
-    graph: dict[str, Any], new_warnings: list[str], parse_errors: list[ParseIssue]
+    graph: dict[str, Any],
+    new_warnings: list[str],
+    parse_errors: list[ParseIssue],
+    diff: ProjectDiff,
 ) -> list[str]:
     def pick(status: str) -> list[str]:
         return sorted(
@@ -212,6 +217,13 @@ def _summary(
     affected = pick("affected")
     if affected:
         lines.append(f"Results may change downstream in: {', '.join(affected)}.")
+    touched = [r for r in diff.rule_impacts if r.level == "touched"]
+    if touched:
+        lines.append(
+            "Touches business rules: "
+            + ", ".join(f"{r.name} (owner: {r.owner})" if r.owner else r.name for r in touched)
+            + "."
+        )
     if not lines:
         lines.append("No models are added, changed, or removed.")
     lines.extend(f"New warning: {w}" for w in new_warnings)

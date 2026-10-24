@@ -1,0 +1,32 @@
+# Business rules for this project. See docs/rules.md in the OpenPipeline repo.
+rules:
+  - id: no-test-orders
+    name: Test orders are never real orders
+    description: >
+      Orders with the status "test" come from checkout testing. They are removed
+      before any other model sees them, so they never count in reports.
+    owner: data-platform
+    tags: [orders, data-quality]
+    applies_to:
+      - model: stg_orders
+
+  - id: lifetime-value
+    name: Lifetime value is what a customer has paid
+    description: >
+      A customer's lifetime value is the total amount they have paid us, in
+      dollars, across all of their orders. Orders with no payment add nothing.
+    owner: growth-team
+    tags: [finance, customers]
+    applies_to:
+      - model: customers
+        columns: [lifetime_value]
+      # The orders.amount column also links to this rule from its dbt YAML.
+
+  - id: amounts-in-dollars
+    name: Money is stored in dollars
+    description: >
+      The payment system sends amounts in cents. We convert them to dollars once,
+      in staging, so every model after that works in dollars.
+    owner: finance-team
+    tags: [finance]
+    # The stg_payments model links to this rule from its dbt YAML.

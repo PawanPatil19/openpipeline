@@ -151,6 +151,31 @@ export interface ChangePreview {
   summary: string[];
 }
 
+export interface RuleLink {
+  model: string;
+  columns: string[];
+}
+
+export interface Rule {
+  id: string;
+  name: string;
+  description: string;
+  owner: string | null;
+  tags: string[];
+  applies_to: RuleLink[];
+}
+
+export interface RulesResponse {
+  rules: Rule[];
+  warnings: string[];
+}
+
+/** A rule as it applies to one model, with the columns it is scoped to. */
+export interface ModelRule {
+  rule: Rule;
+  columns: string[];
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -196,6 +221,8 @@ export const api = {
     }),
   story: (name: string) => request<ModelStory>(`/api/models/${enc(name)}/story`),
   impact: (name: string) => request<Impact>(`/api/models/${enc(name)}/impact`),
+  rules: () => request<RulesResponse>("/api/rules"),
+  modelRules: (name: string) => request<ModelRule[]>(`/api/models/${enc(name)}/rules`),
   proposals: () => request<Proposal[]>("/api/proposals"),
   decide: (
     id: string,
