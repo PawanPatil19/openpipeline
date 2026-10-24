@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v0.1.0 to publish. The tag must match the version in both
+# Push a tag like v1.0.0 to publish. The tag must match the version in both
 # packages' __init__.py (scripts/bump_version.py keeps them in sync).
 on:
   push:
