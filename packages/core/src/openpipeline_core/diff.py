@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from openpipeline_core.graph import ModelGraph
+from openpipeline_core.lineage import ColumnLineage
 from openpipeline_core.models import Node, NodeKind, Project
 from openpipeline_core.rules import Rule, RuleRegistry
 from openpipeline_core.story import explain_model
@@ -31,6 +32,8 @@ class ModelChange(BaseModel):
     """Ids of the business rules this model implements."""
     downstream_rules: list[str] = Field(default_factory=list)
     """Ids of rules implemented by downstream models, which may be affected."""
+    column_usage: dict[str, list[str]] = Field(default_factory=dict)
+    """For each removed or renamed column, the downstream columns that read it, as ``model.column``."""
 
 
 class RuleImpact(BaseModel):
@@ -72,8 +75,13 @@ def diff_projects(
     *,
     base_rules: RuleRegistry | None = None,
     head_rules: RuleRegistry | None = None,
+    base_lineage: ColumnLineage | None = None,
 ) -> ProjectDiff:
-    """Compare two projects. Pass the rule registries to include business rules."""
+    """Compare two projects. Pass the rule registries to include business rules.
+
+    Pass ``base_lineage`` (the column lineage of ``base``) to list, for each column
+    a model lost, the downstream columns that read it.
+    """
     base_models = {n.name: n for n in base.models()}
     head_models = {n.name: n for n in head.models()}
     base_graph, head_graph = ModelGraph(base), ModelGraph(head)
@@ -116,6 +124,7 @@ def diff_projects(
                     change="modified",
                     details=details,
                     removed_columns=removed_columns,
+                    column_usage=_column_usage(base, old, removed_columns, base_lineage),
                     **_impact(head, head_graph, new),
                 )
             )
@@ -125,6 +134,24 @@ def diff_projects(
         if base_rules is not None and head_rules is not None:
             result.rule_changes = _diff_rule_files(base_rules, head_rules)
     return result
+
+
+def _column_usage(
+    base: Project, old: Node, removed_columns: list[str], lineage: ColumnLineage | None
+) -> dict[str, list[str]]:
+    """Downstream columns, in the old project, that read each removed column."""
+    if lineage is None:
+        return {}
+    usage: dict[str, list[str]] = {}
+    for column in removed_columns:
+        readers = [
+            f"{base.nodes[ref.node_id].name}.{ref.column}"
+            for ref in lineage.downstream(old.unique_id, column)
+            if ref.node_id in base.nodes and ref.node_id != old.unique_id
+        ]
+        if readers:
+            usage[column] = readers
+    return usage
 
 
 def _dep_names(project: Project, node: Node) -> list[str]:
@@ -283,6 +310,7 @@ def _normalise(sql: str) -> str:
     return " ".join(sql.split()).lower()
 
 
+_MAX_READERS = 8
 _ICONS = {"added": "🆕", "removed": "🗑️", "modified": "✏️"}
 
 
@@ -317,6 +345,11 @@ def render_diff_markdown(diff: ProjectDiff) -> str:
     for c in diff.changes:
         lines.append(f"#### {_ICONS[c.change]} `{c.name}` ({c.change})")
         lines.extend(f"- {d}" for d in c.details)
+        for column, readers in c.column_usage.items():
+            shown = ", ".join(f"`{r}`" for r in readers[:_MAX_READERS])
+            extra = len(readers) - _MAX_READERS
+            more = f" and {extra} more" if extra > 0 else ""
+            lines.append(f"- Removed column `{column}` is used by {shown}{more}")
         if c.downstream:
             lines.append(f"- Affects: {', '.join(f'`{d}`' for d in c.downstream)}")
         if c.rules:

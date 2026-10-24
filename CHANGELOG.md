@@ -18,6 +18,12 @@ All notable changes are listed here. The format follows
   see them in the Rules tab and the model panel, and get them flagged in PR
   summaries. Adds `openpipeline rules`, `GET /api/rules`,
   `GET /api/models/{name}/rules`, and the `list_rules` MCP tool.
+- Search across models, sources, seeds, and columns: `GET /api/search`, the
+  `search` MCP tool, and a search box in the web UI (press `/` or Ctrl/Cmd+K).
+- Column-level lineage built with sqlglot: `GET /api/models/{name}/columns`,
+  `GET /api/models/{name}/columns/{column}/lineage`, the `column_lineage` MCP
+  tool, `openpipeline lineage MODEL COLUMN`, and a column lineage section in the
+  model panel that highlights the column's path on the graph.
 - Docker image, Compose file, CI, and release workflow.
 - Edit a model's description and column descriptions in the UI. Saving writes to the
   model's YAML file and keeps its comments.
@@ -39,3 +45,6 @@ All notable changes are listed here. The format follows
   `openpipeline sample`, and as the `sample_rows` MCP tool. Install with
   `openpipeline[preview]`; the Docker image includes it. The sample data folder
   and SQL dialect can also be set in a `preview:` section of `openpipeline.yml`.
+- PR summaries and proposal previews now say which downstream columns read a column
+  that was removed or renamed, such as "Removed column `amount` is used by
+  `customers.lifetime_value`".

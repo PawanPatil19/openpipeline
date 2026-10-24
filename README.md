@@ -10,6 +10,9 @@ people who wrote the SQL, a way to understand and review it:
 - **Story view.** Each model explained step by step in plain words: where the
   data comes from, how it is joined and filtered, what one row means, and how
   each column is worked out.
+- **Search and column lineage.** Press `/` to find any model, source, or column
+  by name or description. Pick a column to see which columns it is built from
+  and which ones use it, and the graph lights up only that path.
 - **PR summaries.** A GitHub Action that comments on pull requests with what
   changed in business terms, which other models are affected, and which owners
   to loop in.
@@ -59,6 +62,7 @@ openpipeline explain customers [PROJECT] # explain one model in the terminal
 openpipeline explain customers --ai     # add an AI explanation (see below)
 openpipeline graph [PROJECT]            # print the model graph as JSON
 openpipeline rules [PROJECT]            # business rules, grouped by owner
+openpipeline lineage customers lifetime_value [PROJECT]  # where a column comes from and where it is used
 openpipeline review BASE HEAD           # Markdown summary of the change between two versions
 openpipeline review BASE HEAD --ai      # same, with a plain-words overview at the top
 openpipeline sample customers [PROJECT] # a few rows of a model, on sample data
@@ -77,9 +81,10 @@ claude mcp add openpipeline -- openpipeline mcp /path/to/dbt/project
 ```
 
 The agent gets these tools: `list_models`, `get_model`, `explain`, `impact_of`,
-`list_rules`, `sample_rows`, `preview_change`, `propose_change`, `propose_docs`,
-`get_proposal`, and `list_proposals`. It can look at everything, but it can only propose edits.
-Nothing is written until you accept.
+`search`, `column_lineage`, `list_rules`, `sample_rows`, `preview_change`, `propose_change`,
+`propose_docs`, `get_proposal`, and `list_proposals`. Agents should call `column_lineage`
+before they rename or remove a column. It can look at everything, but it can only propose
+edits. Nothing is written until you accept.
 
 The review loop works like this:
 
@@ -209,6 +214,10 @@ for all of its models.
 ## PR summaries on GitHub
 
 See [actions/pr-summary](actions/pr-summary/README.md).
+
+When a change removes or renames a column, the summary lists the columns in other
+models that read it, for example "Removed column `amount` is used by
+`customers.lifetime_value`". Proposal previews say the same.
 
 ## How it is built
 

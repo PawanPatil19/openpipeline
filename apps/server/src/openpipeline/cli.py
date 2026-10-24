@@ -11,6 +11,7 @@ import typer
 from openpipeline import __version__
 from openpipeline.ai import AIError, AIService, default_client
 from openpipeline_core import (
+    ColumnLineage,
     ModelGraph,
     Project,
     ProjectLoadError,
@@ -193,6 +194,7 @@ def review(
         head_project,
         base_rules=load_rules(base, base_project),
         head_rules=load_rules(head, head_project),
+        base_lineage=ColumnLineage(base_project),
     )
     md = render_diff_markdown(diff)
     if ai and not diff.is_empty:
@@ -277,3 +279,35 @@ def sample(
     for r in cells:
         typer.echo("  ".join(v.ljust(w) for v, w in zip(r, widths, strict=True)).rstrip())
     typer.echo(f"({len(cells)} rows, limit {result.row_limit})")
+
+
+@app.command()
+def lineage(
+    model: Annotated[str, typer.Argument(help="Model name.")],
+    column: Annotated[str, typer.Argument(help="Column name.")],
+    project_dir: ProjectDir = Path("."),
+    as_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Show where a column comes from and where it is used."""
+    from openpipeline.lineage_views import column_lineage_view
+
+    project = _load(project_dir)
+    node = project.get(model)
+    if node is None:
+        typer.secho(f"No model named {model!r}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    try:
+        view = column_lineage_view(project, ColumnLineage(project), node, column)
+    except KeyError as exc:
+        typer.secho(str(exc.args[0]), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    if as_json:
+        typer.echo(view.model_dump_json(indent=2))
+        return
+    typer.secho(f"{view.model}.{view.column}", bold=True)
+    for title, refs in (("Comes from", view.upstream), ("Used by", view.downstream)):
+        typer.echo(f"{title}:")
+        if not refs:
+            typer.echo("  nothing found")
+        for ref in refs:
+            typer.echo(f"  {ref.node}.{ref.column}")

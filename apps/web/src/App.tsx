@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { GraphView } from "./components/GraphView";
 import { ProposalsPanel } from "./components/ProposalsPanel";
 import { ReviewLegend } from "./components/ReviewLegend";
 import { RulesPanel } from "./components/RulesPanel";
+import { SearchBox } from "./components/SearchBox";
 import { StoryPanel } from "./components/StoryPanel";
-import { api, type GraphNode } from "./lib/api";
+import { api } from "./lib/api";
+import { ColumnFocusContext } from "./lib/columnFocus";
+import { useGraphFocus } from "./lib/useGraphFocus";
 
 type Tab = "model" | "rules" | "proposals";
 
@@ -18,8 +21,8 @@ export function App() {
     () => new Set(rules.data?.rules.flatMap((r) => r.applies_to.map((l) => l.model)) ?? []),
     [rules.data],
   );
-  const [selected, setSelected] = useState<GraphNode | null>(null);
   const [tab, setTab] = useState<Tab>("model");
+  const showModelTab = useCallback(() => setTab("model"), []);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const preview = useQuery({
     queryKey: ["preview", reviewId],
@@ -29,6 +32,10 @@ export function App() {
   const reviewing = reviewId !== null && preview.data ? preview.data : null;
   const reviewTitle = proposals.data?.find((p) => p.id === reviewId)?.title ?? "proposal";
   const shownGraph = reviewing ? reviewing.graph : graph.data;
+  const { selected, setSelected, focus, highlightIds, columnFocus, pickHit } = useGraphFocus(
+    shownGraph,
+    showModelTab,
+  );
 
   const pendingCount = proposals.data?.filter((p) => p.status === "pending").length ?? 0;
 
@@ -42,6 +49,7 @@ export function App() {
             sources · read from {project.data.loaded_from}
           </span>
         )}
+        <SearchBox onPick={pickHit} />
         <nav className="tabs" aria-label="Side panel">
           <button type="button" aria-pressed={tab === "model"} onClick={() => setTab("model")}>
             Model
@@ -77,6 +85,8 @@ export function App() {
               statuses={reviewing?.node_statuses}
               selectedId={selected?.id ?? null}
               ruleModels={ruleModels}
+              highlightIds={highlightIds}
+              focus={focus}
               onSelect={(n) => {
                 setSelected(n);
                 if (n) setTab("model");
@@ -113,7 +123,9 @@ export function App() {
               </p>
             </section>
           ) : selected ? (
-            <StoryPanel key={selected.id} node={selected} />
+            <ColumnFocusContext.Provider value={columnFocus}>
+              <StoryPanel key={selected.id} node={selected} />
+            </ColumnFocusContext.Provider>
           ) : (
             <section className="panel">
               <h2>Pick a model</h2>

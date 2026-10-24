@@ -30,6 +30,8 @@ def test_tools_are_registered(project_dir: Path) -> None:
         "impact_of",
         "preview_change",
         "list_rules",
+        "search",
+        "column_lineage",
         "propose_change",
         "get_proposal",
         "propose_docs",
