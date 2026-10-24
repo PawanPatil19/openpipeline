@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from typing import Any
 
 from fastapi.testclient import TestClient
 
@@ -80,3 +81,67 @@ def test_serves_ui_when_built(project_dir: Path, tmp_path: Path, monkeypatch) ->
     assert "openpipeline" in client.get("/models/customers").text  # SPA fallback
     assert client.get("/api/health").status_code == 200
     assert client.get("/api/does-not-exist").status_code == 404
+
+
+def test_save_docs_writes_yaml_and_returns_model(project_dir: Path) -> None:
+    client = _client(project_dir)
+    resp = client.put(
+        "/api/models/customers/docs",
+        json={"description": "Everyone who ordered.", "columns": {"first_name": "Given name."}},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["description"] == "Everyone who ordered."
+    assert {c["name"]: c["description"] for c in body["columns"]}["first_name"] == "Given name."
+    # The change is on disk and the graph sees it.
+    assert "Everyone who ordered." in (project_dir / "models/marts/schema.yml").read_text()
+    again = client.get("/api/models/customers").json()
+    assert again["description"] == "Everyone who ordered."
+    nodes = {n["name"]: n for n in client.get("/api/graph").json()["nodes"]}
+    assert nodes["customers"]["description"] == "Everyone who ordered."
+
+
+def test_save_docs_rejects_unknown_and_non_models(project_dir: Path) -> None:
+    client = _client(project_dir)
+    assert client.put("/api/models/nope/docs", json={"description": "x"}).status_code == 404
+    assert client.put("/api/models/raw_orders/docs", json={"description": "x"}).status_code == 404
+
+
+def _ai_client(project_dir: Path, fake: Any) -> TestClient:
+    return TestClient(create_app(project_dir, serve_ui=False, ai_client=fake))
+
+
+def test_ai_status(project_dir: Path, fake_ai: Any) -> None:
+    off = _client(project_dir).get("/api/ai").json()
+    assert off["available"] is False
+    assert off["reason"]
+    on = _ai_client(project_dir, fake_ai).get("/api/ai").json()
+    assert on == {"available": True, "model": "fake-claude", "reason": None}
+
+
+def test_ai_explanation_and_cache(project_dir: Path, fake_ai: Any) -> None:
+    client = _ai_client(project_dir, fake_ai)
+    url = "/api/models/customers/ai-explanation"
+    first = client.post(url).json()
+    assert first["summary"] == "One row per customer."
+    assert first["cached"] is False
+    assert first["ai_model"] == "fake-claude"
+    assert client.post(url).json()["cached"] is True
+    assert len(fake_ai.calls) == 1
+    assert client.post(url + "?refresh=true").json()["cached"] is False
+    assert len(fake_ai.calls) == 2
+
+
+def test_ai_explanation_errors(project_dir: Path, fake_ai: Any) -> None:
+    unavailable = _client(project_dir).post("/api/models/customers/ai-explanation")
+    assert unavailable.status_code == 503
+    assert unavailable.json()["detail"]
+
+    fake_ai.error = "Rate limited."
+    failed = _ai_client(project_dir, fake_ai).post("/api/models/customers/ai-explanation")
+    assert failed.status_code == 502
+    assert failed.json()["detail"] == "Rate limited."
+
+    client = _ai_client(project_dir, fake_ai)
+    assert client.post("/api/models/nope/ai-explanation").status_code == 404
+    assert client.post("/api/models/raw_orders/ai-explanation").status_code == 404

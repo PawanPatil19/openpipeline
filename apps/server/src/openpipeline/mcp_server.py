@@ -10,11 +10,12 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from openpipeline import __version__
 from openpipeline.proposals import FileChange, Proposal, ProposalStore
 from openpipeline.state import ProjectState
-from openpipeline_core import explain_model
+from openpipeline_core import DocsUpdate, explain_model, update_docs
 
 
 def create_mcp_server(project_dir: str | Path) -> MCPServer:
@@ -25,8 +26,8 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
         instructions=(
             "Read a dbt project and propose changes to it. Use list_models and "
             "explain to understand the project, impact_of before changing a model, "
-            "and propose_change to suggest edits. Proposals are reviewed by a person; "
-            "you cannot change files directly."
+            "and propose_change (or propose_docs for descriptions) to suggest edits. "
+            "Proposals are reviewed by a person; you cannot change files directly."
         ),
         version=__version__,
     )
@@ -83,6 +84,38 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
             )
         )
         return {"id": proposal.id, "status": proposal.status}
+
+    @server.tool()
+    def propose_docs(
+        model: str,
+        description: str | None = None,
+        columns: dict[str, str] | None = None,
+        rationale: str = "",
+        author: str = "agent",
+    ) -> dict[str, Any]:
+        """Propose a new description and/or column descriptions for a model.
+
+        ``columns`` maps column name to description. Leave out anything that should
+        stay as it is. This files a normal proposal containing the updated YAML file,
+        so a person still reviews it before anything is written.
+        """
+        if description is None and not columns:
+            raise ToolError("Give a description, column descriptions, or both.")
+        try:
+            edit = update_docs(
+                state.project(), model, DocsUpdate(description=description, columns=columns or {})
+            )
+        except KeyError as exc:
+            raise ToolError(f"No model named {model!r}") from exc
+        proposal = store.create(
+            Proposal(
+                title=f"Update docs for {model}",
+                rationale=rationale,
+                author=author,
+                changes=[FileChange(path=edit.path, content=edit.content)],
+            )
+        )
+        return {"id": proposal.id, "status": proposal.status, "path": edit.path}
 
     @server.tool()
     def list_proposals() -> list[dict[str, Any]]:

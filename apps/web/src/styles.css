@@ -369,3 +369,64 @@ button.primary {
     border-top: 1px solid var(--border);
   }
 }
+
+.docs-edit {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.docs-edit textarea {
+  width: 100%;
+  min-height: 64px;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.docs-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-head h3 {
+  margin: 16px 0 8px;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.ai-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 12px 0;
+  background: var(--accent-soft);
+}
+
+.ai-card p {
+  margin: 0 0 8px;
+}
+
+.panel__footer {
+  margin-top: 24px;
+  font-size: 12px;
+}

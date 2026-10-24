@@ -24,8 +24,8 @@ files that a person has approved.
 
 ## The parts
 
-**`packages/core`** is a pure Python library with three dependencies
-(pydantic, PyYAML, sqlglot). It loads a project into `Node` objects, builds the
+**`packages/core`** is a pure Python library with four dependencies
+(pydantic, PyYAML, ruamel.yaml, sqlglot). It loads a project into `Node` objects, builds the
 dependency graph, explains a model by reading its SQL structure, and diffs two
 versions of a project. It knows nothing about HTTP, so the PR summary action
 and any future tools can use it alone.
@@ -40,6 +40,18 @@ production it is built into the Python package and served by FastAPI, so there
 is one process and one port. In development Vite serves it with hot reload and
 forwards `/api` to the Python server.
 
+**Docs write-back and AI** are two small additions. `openpipeline_core.docs`
+turns a new description into the full new content of one YAML file (it never
+writes), using ruamel.yaml so comments survive. `openpipeline.files` is the one
+place that writes project files and refuses paths outside the project, in
+`.git`, or in `.openpipeline`. A person saving in the UI writes through it
+directly; the MCP `propose_docs` tool puts the same edit in a proposal instead.
+`openpipeline.ai` is optional. It builds a prompt from the model's SQL, the
+deterministic story, and its direct parents' docs, calls Claude with structured
+output, and caches the answer under `.openpipeline/cache/ai` keyed by a hash of
+everything sent. Without the `ai` extra or a key, the API reports AI as
+unavailable and everything else is unchanged.
+
 **`actions/pr-summary`** is a composite GitHub Action that checks out the base
 branch, runs `openpipeline review base head`, and posts or updates a single PR
 comment.
@@ -50,7 +62,8 @@ comment.
 | --- | --- |
 | **Python for the engine** | dbt, its manifest, and the best SQL parser (sqlglot, with 30+ dialects and column-level lineage) all live in Python. Users already have Python wherever they have dbt. |
 | **Read files directly when there is no manifest** | Lets anyone open a repo with no dbt install, profile, or warehouse credentials. The manifest path is used when present because dbt has already resolved macros and configs. |
-| **Deterministic stories first** | Built from the SQL structure, so they are instant, free, private, and testable. An optional LLM rewrite can be layered on top without changing the API. |
+| **Deterministic stories first** | Built from the SQL structure, so they are instant, free, private, and testable. The optional AI explanation is layered on top, is sent the deterministic story as a starting point, and never replaces it. |
+| **AI only on request** | Nothing leaves your machine unless a person clicks the button or passes `--ai`. AI output only fills editors; a person still saves. |
 | **FastAPI + Typer** | Typed, fast, well known, and pydantic models flow straight from the core to JSON. |
 | **Official MCP Python SDK** | Same process and same core as the API, so agents and people see identical data. |
 | **Proposals as JSON files** | No database to run. Proposals are easy to inspect, commit, or delete by hand, and the review step cannot be skipped. |
@@ -71,8 +84,15 @@ comment.
 ## What comes next
 
 - Column-level lineage using sqlglot's lineage module.
-- Optional LLM-written stories and PR summaries, with the deterministic story
-  as the fallback.
 - Showing a proposal's effect on the graph before accepting it.
 - A visual editing canvas that writes plain dbt SQL.
 - Authentication for shared deployments.
+
+## Data flow for saving docs
+
+1. A person edits a description in the model panel and clicks Save.
+2. `PUT /api/models/{name}/docs` asks `update_docs` for the new YAML file.
+3. `write_file` checks the path and writes it. `ProjectState` notices the change
+   and the graph and story refresh.
+
+Agents use `propose_docs` instead, which files the same YAML as a proposal.

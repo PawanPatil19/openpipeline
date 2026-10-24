@@ -18,6 +18,7 @@ openpipeline = { workspace = true }
 dev = [
     "openpipeline",
     "openpipeline-core",
+    "anthropic>=2.3,<3",
     "pytest>=8.3",
     "pytest-cov>=6.0",
     "httpx>=0.28",

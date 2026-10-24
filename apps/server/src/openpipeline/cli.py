@@ -9,6 +9,7 @@ from typing import Annotated
 import typer
 
 from openpipeline import __version__
+from openpipeline.ai import AIError, AIService, default_client
 from openpipeline_core import (
     ModelGraph,
     Project,
@@ -97,6 +98,9 @@ def explain(
     model: Annotated[str, typer.Argument(help="Model name.")],
     project_dir: ProjectDir = Path("."),
     as_json: Annotated[bool, typer.Option("--json")] = False,
+    ai: Annotated[
+        bool, typer.Option("--ai", help="Also ask Claude to explain it (needs openpipeline[ai]).")
+    ] = False,
 ) -> None:
     """Explain a model in plain English."""
     project = _load(project_dir)
@@ -105,8 +109,21 @@ def explain(
     except KeyError as exc:
         typer.secho(str(exc.args[0]), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
+    explanation = None
+    if ai:
+        node = project.get(model)
+        assert node is not None  # explain_model found it.
+        try:
+            explanation = AIService(project.root, default_client()).explain(
+                project, ModelGraph(project), node
+            )
+        except AIError as exc:
+            typer.secho(f"AI explanation not available: {exc}", fg=typer.colors.YELLOW, err=True)
     if as_json:
-        typer.echo(story.model_dump_json(indent=2))
+        data = story.model_dump(mode="json")
+        if explanation is not None:
+            data["ai"] = explanation.model_dump(mode="json")
+        typer.echo(json.dumps(data, indent=2))
         return
     typer.secho(story.model, bold=True)
     if story.description:
@@ -114,6 +131,14 @@ def explain(
     typer.echo(story.summary)
     for i, step in enumerate(story.steps, 1):
         typer.echo(f"  {i}. {step}")
+    if explanation is not None:
+        typer.echo()
+        typer.secho(f"In plain words (written by {explanation.ai_model})", bold=True)
+        typer.echo(explanation.summary)
+        for note in explanation.columns:
+            typer.echo(f"  {note.name}: {note.description}")
+        for caveat in explanation.caveats:
+            typer.echo(f"  Check: {caveat}")
 
 
 @app.command()
@@ -127,9 +152,24 @@ def review(
     base: Annotated[Path, typer.Argument(help="The project before the change.")],
     head: Annotated[Path, typer.Argument(help="The project after the change.")],
     output: Annotated[Path | None, typer.Option("-o", "--output")] = None,
+    ai: Annotated[
+        bool, typer.Option("--ai", help="Add a plain-words overview written by Claude.")
+    ] = False,
 ) -> None:
     """Summarise what changed between two versions of a project, for a PR comment."""
-    md = render_diff_markdown(diff_projects(_load(base), _load(head)))
+    head_project = _load(head)
+    diff = diff_projects(_load(base), head_project)
+    md = render_diff_markdown(diff)
+    if ai and not diff.is_empty:
+        try:
+            overview = AIService(head_project.root, default_client()).review_overview(diff)
+        except AIError as exc:
+            typer.secho(
+                f"Warning: skipping the AI overview. {exc}", fg=typer.colors.YELLOW, err=True
+            )
+        else:
+            heading, _, rest = md.partition("\n")
+            md = f"{heading}\n\n**In plain words.** {overview.strip()}\n{rest}"
     if output:
         output.write_text(md, encoding="utf-8")
     else:

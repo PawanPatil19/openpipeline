@@ -53,8 +53,10 @@ results) and otherwise reads your SQL and YAML files directly.
 ```bash
 openpipeline serve [PROJECT]            # web UI and API on :8484
 openpipeline explain customers [PROJECT] # explain one model in the terminal
+openpipeline explain customers --ai     # add an AI explanation (see below)
 openpipeline graph [PROJECT]            # print the model graph as JSON
 openpipeline review BASE HEAD           # Markdown summary of the change between two versions
+openpipeline review BASE HEAD --ai      # same, with a plain-words overview at the top
 openpipeline mcp [PROJECT]              # MCP server over stdio for local agents
 openpipeline mcp --transport streamable-http   # MCP over HTTP on :8485
 ```
@@ -70,8 +72,48 @@ claude mcp add openpipeline -- openpipeline mcp /path/to/dbt/project
 ```
 
 The agent gets these tools: `list_models`, `get_model`, `explain`, `impact_of`,
-`propose_change`, and `list_proposals`. It can look at everything, but it can
-only propose edits. You accept or reject them in the **Proposals** tab.
+`propose_change`, `propose_docs`, and `list_proposals`. It can look at everything,
+but it can only propose edits. You accept or reject them in the **Proposals** tab.
+`propose_docs` suggests a new description for a model or its columns.
+
+## Edit descriptions
+
+In the model panel, click **Edit description** or **Edit column descriptions**,
+change the text, and click Save. OpenPipeline writes it to the model's YAML
+file (for example `schema.yml`), keeping the comments and layout of the rest of
+the file. If the model has no entry yet, one is added next to its SQL file.
+
+## AI explanations (optional)
+
+OpenPipeline works fully without AI. If you want a written explanation that
+reads more like a person wrote it, you can turn one on with your own Anthropic
+API key.
+
+```bash
+pip install 'openpipeline[ai]'
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Then click **Explain with AI** in the model panel, or run
+`openpipeline explain customers --ai`. The answer includes a short summary,
+things worth double-checking, and a suggested description and column notes. The
+buttons **Use as description** and **Use column notes** only fill in the
+editors. Nothing is saved until you click Save.
+
+`openpipeline review BASE HEAD --ai` adds an "In plain words" paragraph to the
+top of the PR summary. If the AI call fails, the normal summary is still
+printed.
+
+The default model is `claude-opus-5-5`. Set `OPENPIPELINE_AI_MODEL` to use
+another, or `OPENPIPELINE_AI=off` to switch AI off completely.
+
+**Privacy.** The SQL and documentation of the model you ask about, and of the
+models it reads from, are sent to Anthropic. This happens only when you click
+the button or pass `--ai`. Nothing is sent otherwise.
+
+Answers are cached in `.openpipeline/cache/ai` inside your project, so asking
+again about an unchanged model costs nothing. Add `.openpipeline/` to your
+`.gitignore`.
 
 ## PR summaries on GitHub
 
