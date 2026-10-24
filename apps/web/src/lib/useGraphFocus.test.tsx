@@ -92,4 +92,21 @@ describe("useGraphFocus", () => {
     act(() => result.current.columnFocus.select(null));
     expect(result.current.columnFocus.selection).toBeNull();
   });
+
+  it("once a column's lineage loads, the whole path is brought into view", async () => {
+    const { result } = setup();
+    act(() => result.current.pickHit(hit("b", "x")));
+    await waitFor(() => expect(result.current.focus?.ids).toBeDefined());
+    expect(result.current.focus?.id).toBe("b");
+    expect([...(result.current.focus?.ids ?? [])].sort()).toEqual(["a", "b", "c"]);
+  });
+
+  it("picking a column of the open node does not recenter on the node first", async () => {
+    const { result } = setup();
+    act(() => result.current.pickHit(hit("b", null)));
+    const seq = result.current.focus?.seq;
+    act(() => result.current.columnFocus.select({ nodeId: "b", column: "x" }));
+    expect(result.current.focus?.seq).toBe(seq);
+    await waitFor(() => expect(result.current.focus?.ids).toBeDefined());
+  });
 });
