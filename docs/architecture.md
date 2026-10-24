@@ -30,10 +30,20 @@ dependency graph, explains a model by reading its SQL structure, and diffs two
 versions of a project. It knows nothing about HTTP, so the PR summary action
 and any future tools can use it alone.
 
+Column lineage lives in the core too (`lineage.py`). For each model it points
+every real table in the SQL at the node it refers to, lets sqlglot qualify the
+query and trace each output column, and records which upstream
+`(node, column)` pairs feed it. Models are read in dependency order, so a
+`select *` can use the columns the upstream model was already found to
+produce. Sources without documented columns learn their columns from the models
+that read them. It never raises: SQL that cannot be read just has no known
+upstream columns. `search.py` ranks nodes and columns by name, then description.
+
 **`apps/server`** is the `openpipeline` package people install. It wraps the
 core in a Typer CLI, a FastAPI app, and an MCP server. `ProjectState` caches the
-loaded project and reloads it when any SQL, YAML, CSV, or manifest file
-changes, so the UI and agents always see what is on disk.
+loaded project, its graph, and its column lineage, and reloads them when any
+SQL, YAML, CSV, or manifest file changes, so the UI and agents always see what
+is on disk.
 
 **Sample row previews** are split across both packages. Core has the parts that
 need no database: `compile_sql` turns a model's SQL into plain SQL by replacing
@@ -112,7 +122,6 @@ comment.
 
 ## What comes next
 
-- Column-level lineage using sqlglot's lineage module.
 - A visual editing canvas that writes plain dbt SQL.
 - Authentication for shared deployments.
 

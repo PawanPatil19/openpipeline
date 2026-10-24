@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 
 from openpipeline_core.diff import ProjectDiff, diff_projects
 from openpipeline_core.graph import ModelGraph
+from openpipeline_core.lineage import ColumnLineage
 from openpipeline_core.loader import load_project
 from openpipeline_core.models import NodeKind, Project
 from openpipeline_core.rules import load_rules
@@ -94,7 +95,13 @@ def preview_changes(project_root: str | Path, changes: Iterable[tuple[str, str]]
         after = load_project(copy, prefer_manifest=False)
         after_rules = load_rules(copy, after)
 
-    diff = diff_projects(before, after, base_rules=load_rules(root, before), head_rules=after_rules)
+    diff = diff_projects(
+        before,
+        after,
+        base_rules=load_rules(root, before),
+        head_rules=after_rules,
+        base_lineage=ColumnLineage(before),
+    )
     statuses = _node_statuses(before, after)
     before_set = set(before.warnings)
     new_warnings = [w for w in after.warnings if w not in before_set]
@@ -217,6 +224,11 @@ def _summary(
     affected = pick("affected")
     if affected:
         lines.append(f"Results may change downstream in: {', '.join(affected)}.")
+    for change in diff.changes:
+        for column, readers in change.column_usage.items():
+            lines.append(
+                f"Removed column {change.name}.{column} is still read by {', '.join(readers)}."
+            )
     touched = [r for r in diff.rule_impacts if r.level == "touched"]
     if touched:
         lines.append(

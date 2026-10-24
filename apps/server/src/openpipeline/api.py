@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from openpipeline import __version__
 from openpipeline.ai import AIClient, AIError, AIExplanation, AIService, AIStatus, default_client
 from openpipeline.files import write_file
+from openpipeline.lineage_views import lineage_router
 from openpipeline.proposals import Proposal, ProposalStore, StaleProposalError, Status
 from openpipeline.sample import DEFAULT_LIMIT, MAX_LIMIT, SampleEngine, SampleResult, SampleStatus
 from openpipeline.state import ProjectState
@@ -219,6 +220,8 @@ def create_app(
             return preview_changes(state.root, [(c.path, c.content) for c in proposal.changes])
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    app.include_router(lineage_router(state))
 
     if serve_ui and (STATIC_DIR / "index.html").is_file():
         app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")

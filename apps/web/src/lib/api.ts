@@ -119,6 +119,38 @@ export interface SampleStatus {
   tables: { name: string; kind: string; path: string }[];
 }
 
+export type SearchKind = NodeKind | "column";
+
+export interface SearchHit {
+  kind: SearchKind;
+  node_id: string;
+  name: string;
+  column: string | null;
+  snippet: string;
+  score: number;
+}
+
+export interface ColumnRefView {
+  node_id: string;
+  node: string;
+  kind: NodeKind;
+  column: string;
+}
+
+export interface ColumnInfo {
+  name: string;
+  description: string;
+  tests: string[];
+  upstream: ColumnRefView[];
+}
+
+export interface ColumnLineageView {
+  model: string;
+  column: string;
+  upstream: ColumnRefView[];
+  downstream: ColumnRefView[];
+}
+
 export interface Proposal {
   id: string;
   title: string;
@@ -159,6 +191,8 @@ export interface ModelChange {
   details: string[];
   downstream: string[];
   owners: string[];
+  /** Removed or renamed column -> downstream columns that read it, as "model.column". */
+  column_usage?: Record<string, string[]>;
 }
 
 export interface ChangePreview {
@@ -246,6 +280,10 @@ export const api = {
   sampleStatus: () => request<SampleStatus>("/api/sample/status"),
   sample: (name: string, limit = 20) =>
     request<SampleResult>(`/api/models/${enc(name)}/sample?limit=${limit}`),
+  search: (q: string, limit = 20) => request<SearchHit[]>(`/api/search?q=${enc(q)}&limit=${limit}`),
+  columns: (name: string) => request<ColumnInfo[]>(`/api/models/${enc(name)}/columns`),
+  columnLineage: (name: string, column: string) =>
+    request<ColumnLineageView>(`/api/models/${enc(name)}/columns/${enc(column)}/lineage`),
   proposals: () => request<Proposal[]>("/api/proposals"),
   decide: (
     id: string,

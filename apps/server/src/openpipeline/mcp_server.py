@@ -13,10 +13,17 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from openpipeline import __version__
+from openpipeline.lineage_views import column_lineage_view
 from openpipeline.proposals import FileChange, Proposal, ProposalStore
 from openpipeline.sample import SampleEngine
 from openpipeline.state import ProjectState
-from openpipeline_core import DocsUpdate, explain_model, preview_changes, update_docs
+from openpipeline_core import (
+    DocsUpdate,
+    explain_model,
+    preview_changes,
+    search_project,
+    update_docs,
+)
 
 
 def create_mcp_server(
@@ -33,10 +40,12 @@ def create_mcp_server(
         instructions=(
             "Read a dbt project and propose changes to it. You cannot change files "
             "directly: a person reviews every proposal on the graph and accepts or "
-            "rejects it. Work in this loop. 1) explain (and list_models, get_model) to "
-            "understand the models you will touch (propose_docs files a description-only "
-            "change). 2) impact_of to see what depends on them. 3) preview_change with the full new file contents to check the effect "
-            "without saving anything, and fix new warnings and SQL errors. "
+            "rejects it. Work in this loop. 1) explain (and list_models, get_model, "
+            "search) to understand the models you will touch (propose_docs files a "
+            "description-only change). 2) impact_of to see what depends on them, and "
+            "column_lineage before you rename or remove a column. 3) preview_change "
+            "with the full new file contents to check the effect without saving "
+            "anything, and fix new warnings and SQL errors. "
             "4) propose_change with the same files, a clear title, and a rationale in plain "
             "English. 5) Poll get_proposal to see whether it was accepted or rejected, and "
             "to read the person's comments. 6) If they ask for changes, call "
@@ -149,6 +158,33 @@ def create_mcp_server(
             return sampler.sample(name, limit).model_dump(mode="json")
         except KeyError as exc:
             raise ValueError(f"No model named {name!r}") from exc
+
+    @server.tool()
+    def search(query: str, limit: int = 20) -> list[dict[str, Any]]:
+        """Find models, sources, seeds, and columns by name or description.
+
+        Best matches come first. Each hit has a kind, node name, optional column,
+        and a short snippet.
+        """
+        hits = search_project(state.project(), state.lineage(), query, limit)
+        return [h.model_dump(mode="json", exclude={"score"}) for h in hits]
+
+    @server.tool()
+    def column_lineage(model: str, column: str) -> dict[str, Any]:
+        """Show which columns a column is built from and which columns use it.
+
+        Call this before you rename, remove, or change the meaning of a column.
+        Everything under ``downstream`` may break. Upstream and downstream lists
+        are nearest first and cover every hop, not just the direct neighbours.
+        """
+        node = state.project().get(model)
+        if node is None:
+            raise ToolError(f"No model named {model!r}")
+        try:
+            view = column_lineage_view(state.project(), state.lineage(), node, column)
+        except KeyError as exc:
+            raise ToolError(exc.args[0]) from exc
+        return view.model_dump(mode="json")
 
     @server.tool()
     def propose_change(

@@ -125,3 +125,17 @@ def test_sample_reports_missing_data(project_dir: Path, tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "raw.orders" in result.output
     assert runner.invoke(app, ["sample", "nope", str(project_dir)]).exit_code == 1
+
+
+def test_review_lists_columns_used_downstream(project_dir: Path, tmp_path: Path) -> None:
+    head = tmp_path / "head"
+    shutil.copytree(project_dir, head)
+    orders = head / "models" / "marts" / "orders.sql"
+    orders.write_text(
+        orders.read_text().replace(
+            "as amount\nfrom {{ ref('stg_orders') }}", "as paid\nfrom {{ ref('stg_orders') }}"
+        )
+    )
+    result = runner.invoke(app, ["review", str(project_dir), str(head)])
+    assert result.exit_code == 0
+    assert "Removed column `amount` is used by `customers.lifetime_value`" in result.stdout

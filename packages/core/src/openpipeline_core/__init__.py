@@ -11,10 +11,12 @@ from openpipeline_core.diff import (
 )
 from openpipeline_core.docs import DocsUpdate, FileEdit, update_docs
 from openpipeline_core.graph import ModelGraph
+from openpipeline_core.lineage import ColumnLineage, ColumnRef
 from openpipeline_core.loader import ProjectLoadError, load_project
 from openpipeline_core.models import Column, Node, NodeKind, Project
 from openpipeline_core.preview import ChangePreview, FileDiff, ParseIssue, preview_changes
 from openpipeline_core.rules import ModelRule, Rule, RuleLink, RuleRegistry, load_rules
+from openpipeline_core.search import SearchHit, search_project
 from openpipeline_core.story import ModelStory, explain_model
 
 __version__ = "0.1.0"
@@ -22,6 +24,8 @@ __version__ = "0.1.0"
 __all__ = [
     "ChangePreview",
     "Column",
+    "ColumnLineage",
+    "ColumnRef",
     "DocsUpdate",
     "FileDiff",
     "FileEdit",
@@ -41,6 +45,7 @@ __all__ = [
     "RuleImpact",
     "RuleLink",
     "RuleRegistry",
+    "SearchHit",
     "UnsupportedJinja",
     "__version__",
     "compile_sql",
@@ -51,5 +56,6 @@ __all__ = [
     "plan_preview",
     "preview_changes",
     "render_diff_markdown",
+    "search_project",
     "update_docs",
 ]

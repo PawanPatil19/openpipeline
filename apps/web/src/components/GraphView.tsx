@@ -12,6 +12,7 @@ import {
 import { useMemo } from "react";
 import type { Graph, GraphNode, NodeStatus } from "../lib/api";
 import { layoutGraph, lineage, NODE_HEIGHT, NODE_WIDTH } from "../lib/layout";
+import { FocusNode, type FocusRequest } from "./FocusNode";
 
 type PipelineNode = Node<
   { node: GraphNode; dimmed: boolean; selected: boolean; status?: NodeStatus; hasRules: boolean },
@@ -63,14 +64,27 @@ interface Props {
   statuses?: Record<string, NodeStatus>;
   /** Names of models that implement at least one business rule. */
   ruleModels?: ReadonlySet<string>;
+  /** When set, only these node ids are lit. Used to show one column's lineage. */
+  highlightIds?: Set<string> | null;
+  /** Center the view on a node. Pass a new `seq` to center again. */
+  focus?: FocusRequest | null;
 }
 
-export function GraphView({ graph, selectedId, onSelect, statuses, ruleModels }: Props) {
+export function GraphView({
+  graph,
+  selectedId,
+  onSelect,
+  statuses,
+  ruleModels,
+  highlightIds,
+  focus,
+}: Props) {
   const positions = useMemo(() => layoutGraph(graph), [graph]);
-  const highlighted = useMemo(
+  const nodeLineage = useMemo(
     () => (selectedId ? lineage(graph, selectedId) : null),
     [graph, selectedId],
   );
+  const highlighted = highlightIds ?? nodeLineage;
 
   const nodes: PipelineNode[] = graph.nodes.map((n) => {
     const p = positions.get(n.id);
@@ -122,6 +136,7 @@ export function GraphView({ graph, selectedId, onSelect, statuses, ruleModels }:
       minZoom={0.2}
       proOptions={{ hideAttribution: true }}
     >
+      <FocusNode focus={focus ?? null} />
       <Background gap={20} />
       <Controls showInteractive={false} />
       <MiniMap

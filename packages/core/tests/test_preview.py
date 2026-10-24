@@ -106,3 +106,18 @@ def test_preview_reports_business_rules_touched(example_dir: Path) -> None:
     touched = {r.id for r in preview.diff.rule_impacts if r.level == "touched"}
     assert "lifetime-value" in touched
     assert any(line.startswith("Touches business rules:") for line in preview.summary)
+
+
+def test_preview_names_downstream_readers_of_a_removed_column(example_dir: Path) -> None:
+    orders = (example_dir / "models" / "marts" / "orders.sql").read_text()
+    renamed = orders.replace(
+        "as amount\nfrom {{ ref('stg_orders') }}", "as paid\nfrom {{ ref('stg_orders') }}"
+    )
+    assert renamed != orders
+    preview = preview_changes(example_dir, [("models/marts/orders.sql", renamed)])
+    change = next(c for c in preview.diff.changes if c.name == "orders")
+    assert change.column_usage == {"amount": ["customers.lifetime_value"]}
+    assert any(
+        "orders.amount is still read by customers.lifetime_value" in line
+        for line in preview.summary
+    )
