@@ -1,0 +1,28 @@
+# Run the web UI and the MCP server against a dbt project on your machine.
+#
+#   DBT_PROJECT_DIR=~/code/my-dbt-project docker compose up
+#
+# Then open http://localhost:8484 and point agents at http://localhost:8485/mcp.
+# Without DBT_PROJECT_DIR it uses the bundled example project.
+
+x-openpipeline: &openpipeline
+  image: ghcr.io/pawanpatil19/openpipeline:${OPENPIPELINE_VERSION:-latest}
+  build: .
+  restart: unless-stopped
+  volumes:
+    - ${DBT_PROJECT_DIR:-./examples/jaffle_shop}:/project
+
+services:
+  web:
+    <<: *openpipeline
+    command: ["serve"]
+    ports:
+      - "8484:8484"
+
+  mcp:
+    <<: *openpipeline
+    command: ["mcp", "--transport", "streamable-http"]
+    ports:
+      - "8485:8485"
+    healthcheck:
+      disable: true

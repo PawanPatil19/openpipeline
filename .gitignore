@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Node
+node_modules/
+apps/web/dist/
+*.tsbuildinfo
+
+# The web UI build is copied into the Python package at build time.
+apps/server/src/openpipeline/static/
+
+# dbt and OpenPipeline runtime files
+target/
+dbt_packages/
+logs/
+.openpipeline/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.env

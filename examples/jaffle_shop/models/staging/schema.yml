@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Cleaned list of customers.
+    columns:
+      - name: customer_id
+        description: Unique id for each customer.
+        tests: [unique, not_null]
+  - name: stg_orders
+    description: Orders with test orders removed.
+  - name: stg_payments
+    description: Payments with amounts converted from cents to dollars.

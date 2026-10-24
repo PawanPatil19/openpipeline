@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw tables loaded from the shop's production database.
+    tables:
+      - name: customers
+        description: One row per person who signed up.
+      - name: orders
+        description: One row per order placed in the shop.
+      - name: payments
+        description: One row per payment attempt.

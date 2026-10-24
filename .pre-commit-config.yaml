@@ -1,0 +1,21 @@
+# Uses the tools already installed by `uv sync` and `pnpm install`, so hook
+# versions always match CI. Install with `make install` or `uv run pre-commit install`.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: biome
+        name: biome
+        entry: pnpm --filter @openpipeline/web exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
+        language: system
+        files: ^apps/web/
+        pass_filenames: false

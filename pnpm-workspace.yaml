@@ -1,0 +1,6 @@
+packages:
+  - apps/web
+
+# Only install package versions that have been public for at least 7 days,
+# which protects against most compromised-release supply chain attacks.
+minimumReleaseAge: 10080

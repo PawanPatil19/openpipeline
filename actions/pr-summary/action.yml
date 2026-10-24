@@ -1,0 +1,81 @@
+name: OpenPipeline PR summary
+description: Comment on a pull request with a plain-English summary of the dbt model changes and what they affect.
+author: OpenPipeline contributors
+branding:
+  icon: git-pull-request
+  color: blue
+
+inputs:
+  project-dir:
+    description: Path to the dbt project inside the repository.
+    default: "."
+  base-ref:
+    description: Branch or commit to compare against. Defaults to the pull request's base branch.
+    default: ""
+  comment:
+    description: Post (or update) a comment on the pull request. Needs `pull-requests: write`.
+    default: "true"
+  github-token:
+    description: Token used to post the comment.
+    default: ${{ github.token }}
+
+outputs:
+  summary-file:
+    description: Path to the generated Markdown summary.
+    value: ${{ steps.review.outputs.file }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.13"
+
+    - name: Install OpenPipeline
+      shell: bash
+      run: |
+        # Install from this action's own checkout so the action and tool versions always match.
+        python -m pip install --quiet "${{ github.action_path }}/../../packages/core" "${{ github.action_path }}/../../apps/server"
+
+    - name: Check out the base version
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref || github.base_ref }}
+      run: |
+        git fetch --no-tags --depth=1 origin "$BASE_REF"
+        git worktree add --detach "$RUNNER_TEMP/openpipeline-base" FETCH_HEAD
+
+    - name: Summarise changes
+      id: review
+      shell: bash
+      env:
+        PROJECT_DIR: ${{ inputs.project-dir }}
+      run: |
+        base="$RUNNER_TEMP/openpipeline-base/$PROJECT_DIR"
+        if [ ! -f "$base/dbt_project.yml" ]; then
+          # The project is new in this pull request, so compare against an empty one.
+          base="$RUNNER_TEMP/openpipeline-empty"
+          mkdir -p "$base" && echo "name: empty" > "$base/dbt_project.yml"
+        fi
+        out="$RUNNER_TEMP/openpipeline-summary.md"
+        openpipeline review "$base" "$PROJECT_DIR" --output "$out"
+        cat "$out" >> "$GITHUB_STEP_SUMMARY"
+        echo "file=$out" >> "$GITHUB_OUTPUT"
+
+    - name: Comment on the pull request
+      if: inputs.comment == 'true' && github.event.pull_request.number
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR: ${{ github.event.pull_request.number }}
+        FILE: ${{ steps.review.outputs.file }}
+      run: |
+        marker="<!-- openpipeline-summary -->"
+        body="$(printf '%s\n%s' "$marker" "$(cat "$FILE")")"
+        existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+          --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n1)
+        if [ -n "$existing" ]; then
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -f body="$body" > /dev/null
+        else
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" > /dev/null
+        fi

@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: customers
+    description: One row per customer with their order history and lifetime value.
+    meta:
+      owner: growth-team
+    columns:
+      - name: lifetime_value
+        description: Total amount the customer has paid us, in dollars.
+  - name: orders
+    description: One row per order with the total amount paid.
