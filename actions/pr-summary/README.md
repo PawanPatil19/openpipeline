@@ -25,5 +25,25 @@ jobs:
           project-dir: .   # where dbt_project.yml lives
 ```
 
+## Optional: AI overview
+
+Add a short plain-words paragraph at the top of the comment, written by Claude.
+
+```yaml
+      - uses: PawanPatil19/openpipeline/actions/pr-summary@v0
+        with:
+          ai: "true"
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+This is off by default. When it is on, the SQL and documentation of the changed
+models are sent to Anthropic. If the AI call fails, the comment is still posted
+without the paragraph.
+
+| Input | Default | What it does |
+| --- | --- | --- |
+| `ai` | `"false"` | Install `openpipeline[ai]` and add the overview. |
+| `anthropic-api-key` | none | Your key. Store it as a repository secret. |
+
 The comment is updated in place on every push, so the pull request only ever
 has one.

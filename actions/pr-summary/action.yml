@@ -18,6 +18,12 @@ inputs:
   github-token:
     description: Token used to post the comment.
     default: ${{ github.token }}
+  ai:
+    description: "Add a plain-words overview written by Claude. Sends model SQL and docs to Anthropic. Needs `anthropic-api-key`."
+    default: "false"
+  anthropic-api-key:
+    description: Anthropic API key, used only when `ai` is true. Store it as a repository secret.
+    default: ""
 
 outputs:
   summary-file:
@@ -37,6 +43,12 @@ runs:
         # Install from this action's own checkout so the action and tool versions always match.
         python -m pip install --quiet "${{ github.action_path }}/../../packages/core" "${{ github.action_path }}/../../apps/server"
 
+    - name: Install the AI extra
+      if: inputs.ai == 'true'
+      shell: bash
+      run: |
+        python -m pip install --quiet "${{ github.action_path }}/../../apps/server[ai]"
+
     - name: Check out the base version
       shell: bash
       env:
@@ -50,6 +62,8 @@ runs:
       shell: bash
       env:
         PROJECT_DIR: ${{ inputs.project-dir }}
+        AI: ${{ inputs.ai }}
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
       run: |
         base="$RUNNER_TEMP/openpipeline-base/$PROJECT_DIR"
         if [ ! -f "$base/dbt_project.yml" ]; then
@@ -58,7 +72,9 @@ runs:
           mkdir -p "$base" && echo "name: empty" > "$base/dbt_project.yml"
         fi
         out="$RUNNER_TEMP/openpipeline-summary.md"
-        openpipeline review "$base" "$PROJECT_DIR" --output "$out"
+        flags=()
+        if [ "$AI" = "true" ]; then flags+=(--ai); fi
+        openpipeline review "$base" "$PROJECT_DIR" --output "$out" "${flags[@]}"
         cat "$out" >> "$GITHUB_STEP_SUMMARY"
         echo "file=$out" >> "$GITHUB_OUTPUT"
 

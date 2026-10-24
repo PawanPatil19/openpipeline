@@ -31,6 +31,43 @@ export interface ProjectInfo {
   warnings: string[];
 }
 
+export interface DocColumn {
+  name: string;
+  description: string;
+  tests: string[];
+}
+
+/** A node as returned by `/api/models/{name}`. */
+export interface ModelNode {
+  unique_id: string;
+  name: string;
+  kind: NodeKind;
+  description: string;
+  path: string | null;
+  columns: DocColumn[];
+}
+
+export interface DocsUpdate {
+  description?: string;
+  columns?: Record<string, string>;
+}
+
+export interface AIStatus {
+  available: boolean;
+  model: string | null;
+  reason: string | null;
+}
+
+export interface AIExplanation {
+  summary: string;
+  description: string;
+  columns: { name: string; description: string }[];
+  caveats: string[];
+  model: string;
+  ai_model: string;
+  cached: boolean;
+}
+
 export interface ColumnStory {
   name: string;
   how: string;
@@ -92,6 +129,17 @@ const enc = encodeURIComponent;
 export const api = {
   project: () => request<ProjectInfo>("/api/project"),
   graph: () => request<Graph>("/api/graph"),
+  model: (name: string) => request<ModelNode>(`/api/models/${enc(name)}`),
+  saveDocs: (name: string, update: DocsUpdate) =>
+    request<ModelNode>(`/api/models/${enc(name)}/docs`, {
+      method: "PUT",
+      body: JSON.stringify(update),
+    }),
+  aiStatus: () => request<AIStatus>("/api/ai"),
+  aiExplain: (name: string, refresh = false) =>
+    request<AIExplanation>(`/api/models/${enc(name)}/ai-explanation?refresh=${refresh}`, {
+      method: "POST",
+    }),
   story: (name: string) => request<ModelStory>(`/api/models/${enc(name)}/story`),
   impact: (name: string) => request<Impact>(`/api/models/${enc(name)}/impact`),
   proposals: () => request<Proposal[]>("/api/proposals"),

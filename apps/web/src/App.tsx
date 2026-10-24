@@ -67,7 +67,7 @@ export function App() {
           {tab === "proposals" ? (
             <ProposalsPanel />
           ) : selected ? (
-            <StoryPanel node={selected} />
+            <StoryPanel key={selected.id} node={selected} />
           ) : (
             <section className="panel">
               <h2>Pick a model</h2>

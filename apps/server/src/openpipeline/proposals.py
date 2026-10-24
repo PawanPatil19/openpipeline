@@ -17,6 +17,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from openpipeline.files import safe_path, write_file
+
 Status = Literal["pending", "accepted", "rejected"]
 
 
@@ -47,7 +49,7 @@ class ProposalStore:
 
     def create(self, proposal: Proposal) -> Proposal:
         for change in proposal.changes:
-            self._safe_path(change.path)
+            safe_path(self.root, change.path)
         self.dir.mkdir(parents=True, exist_ok=True)
         self._file(proposal.id).write_text(proposal.model_dump_json(indent=2), encoding="utf-8")
         return proposal
@@ -84,24 +86,9 @@ class ProposalStore:
 
     def _apply(self, proposal: Proposal) -> None:
         for change in proposal.changes:
-            target = self._safe_path(change.path)
-            if change.content == "":
-                target.unlink(missing_ok=True)
-            else:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(change.content, encoding="utf-8")
-
-    def _safe_path(self, rel: str) -> Path:
-        """Refuse paths that escape the project or touch OpenPipeline's own folder."""
-        target = (self.root / rel).resolve()
-        if not target.is_relative_to(self.root) or target == self.root:
-            raise ValueError(f"Path {rel!r} is outside the project")
-        if (
-            target.is_relative_to(self.root / ".openpipeline")
-            or ".git" in target.relative_to(self.root).parts
-        ):
-            raise ValueError(f"Path {rel!r} is not allowed")
-        return target
+            safe_path(self.root, change.path)  # Check every path before writing any.
+        for change in proposal.changes:
+            write_file(self.root, change.path, change.content)
 
     def _file(self, proposal_id: str) -> Path:
         return self.dir / f"{proposal_id}.json"

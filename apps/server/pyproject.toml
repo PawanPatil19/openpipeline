@@ -29,6 +29,11 @@ openpipeline = "openpipeline.cli:app"
 Homepage = "https://github.com/PawanPatil19/openpipeline"
 Issues = "https://github.com/PawanPatil19/openpipeline/issues"
 
+[project.optional-dependencies]
+ai = [
+    "anthropic>=2.3,<3",
+]
+
 [build-system]
 requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"

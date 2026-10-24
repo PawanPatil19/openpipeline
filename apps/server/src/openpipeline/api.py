@@ -11,9 +11,11 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from openpipeline import __version__
+from openpipeline.ai import AIClient, AIError, AIExplanation, AIService, AIStatus, default_client
+from openpipeline.files import write_file
 from openpipeline.proposals import Proposal, ProposalStore, Status
 from openpipeline.state import ProjectState
-from openpipeline_core import ModelStory, Node, explain_model
+from openpipeline_core import DocsUpdate, ModelStory, Node, NodeKind, explain_model, update_docs
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -37,9 +39,12 @@ class StatusUpdate(BaseModel):
     status: Status
 
 
-def create_app(project_dir: str | Path, *, serve_ui: bool = True) -> FastAPI:
+def create_app(
+    project_dir: str | Path, *, serve_ui: bool = True, ai_client: AIClient | None = None
+) -> FastAPI:
     state = ProjectState(project_dir)
     proposals = ProposalStore(state.root)
+    ai = AIService(state.root, ai_client if ai_client is not None else default_client())
     app = FastAPI(title="OpenPipeline", version=__version__, docs_url="/api/docs")
 
     def node_or_404(name: str) -> Node:
@@ -71,6 +76,38 @@ def create_app(project_dir: str | Path, *, serve_ui: bool = True) -> FastAPI:
     @app.get("/api/models/{name}")
     def model(name: str) -> Node:
         return node_or_404(name)
+
+    def model_or_404(name: str) -> Node:
+        node = node_or_404(name)
+        if node.kind != NodeKind.MODEL:
+            raise HTTPException(status_code=404, detail=f"No model named {name!r}")
+        return node
+
+    @app.put("/api/models/{name}/docs")
+    def save_docs(name: str, body: DocsUpdate) -> Node:
+        """A person saving descriptions from the UI. Writes the YAML file directly."""
+        node = model_or_404(name)
+        try:
+            edit = update_docs(state.project(), node.unique_id, body)
+            write_file(state.root, edit.path, edit.content)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return model_or_404(name)
+
+    @app.get("/api/ai")
+    def ai_status() -> AIStatus:
+        return ai.status()
+
+    @app.post("/api/models/{name}/ai-explanation")
+    def ai_explanation(name: str, refresh: bool = False) -> AIExplanation:
+        node = model_or_404(name)
+        status = ai.status()
+        if not status.available:
+            raise HTTPException(status_code=503, detail=status.reason or "AI is not available.")
+        try:
+            return ai.explain(state.project(), state.graph(), node, refresh=refresh)
+        except AIError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     @app.get("/api/models/{name}/story")
     def story(name: str) -> ModelStory:
