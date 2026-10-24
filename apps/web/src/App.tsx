@@ -1,17 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GraphView } from "./components/GraphView";
 import { ProposalsPanel } from "./components/ProposalsPanel";
 import { ReviewLegend } from "./components/ReviewLegend";
+import { RulesPanel } from "./components/RulesPanel";
 import { StoryPanel } from "./components/StoryPanel";
 import { api, type GraphNode } from "./lib/api";
 
-type Tab = "model" | "proposals";
+type Tab = "model" | "rules" | "proposals";
 
 export function App() {
   const project = useQuery({ queryKey: ["project"], queryFn: api.project });
   const graph = useQuery({ queryKey: ["graph"], queryFn: api.graph });
   const proposals = useQuery({ queryKey: ["proposals"], queryFn: api.proposals });
+  const rules = useQuery({ queryKey: ["rules"], queryFn: api.rules });
+  const ruleModels = useMemo(
+    () => new Set(rules.data?.rules.flatMap((r) => r.applies_to.map((l) => l.model)) ?? []),
+    [rules.data],
+  );
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [tab, setTab] = useState<Tab>("model");
   const [reviewId, setReviewId] = useState<string | null>(null);
@@ -40,6 +46,9 @@ export function App() {
           <button type="button" aria-pressed={tab === "model"} onClick={() => setTab("model")}>
             Model
           </button>
+          <button type="button" aria-pressed={tab === "rules"} onClick={() => setTab("rules")}>
+            Rules
+          </button>
           <button
             type="button"
             aria-pressed={tab === "proposals"}
@@ -67,6 +76,7 @@ export function App() {
               graph={shownGraph}
               statuses={reviewing?.node_statuses}
               selectedId={selected?.id ?? null}
+              ruleModels={ruleModels}
               onSelect={(n) => {
                 setSelected(n);
                 if (n) setTab("model");
@@ -82,6 +92,16 @@ export function App() {
               onReview={(id) => {
                 setReviewId(id);
                 setSelected(null);
+              }}
+            />
+          ) : tab === "rules" ? (
+            <RulesPanel
+              onSelectModel={(name) => {
+                const node = graph.data?.nodes.find((n) => n.name === name);
+                if (node) {
+                  setSelected(node);
+                  setTab("model");
+                }
               }}
             />
           ) : selected && reviewing?.node_statuses[selected.id] === "added" ? (

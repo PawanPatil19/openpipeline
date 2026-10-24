@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api, type DocsUpdate, type GraphNode } from "../lib/api";
 import { AiExplain } from "./AiExplain";
+import { ModelRules } from "./ModelRules";
 
 export function StoryPanel({ node }: { node: GraphNode }) {
   const queryClient = useQueryClient();
@@ -199,6 +200,8 @@ export function StoryPanel({ node }: { node: GraphNode }) {
           )}
         </>
       )}
+
+      <ModelRules node={node} />
 
       {impact.data && impact.data.downstream.length > 0 && (
         <>

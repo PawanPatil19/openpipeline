@@ -27,17 +27,31 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
             "Read a dbt project and propose changes to it. You cannot change files "
             "directly: a person reviews every proposal on the graph and accepts or "
             "rejects it. Work in this loop. 1) explain (and list_models, get_model) to "
-            "understand the models you will touch (propose_docs files a description-only change). 2) impact_of to see what depends on "
-            "them. 3) preview_change with the full new file contents to check the effect "
+            "understand the models you will touch (propose_docs files a description-only "
+            "change). 2) impact_of to see what depends on them. 3) preview_change with the full new file contents to check the effect "
             "without saving anything, and fix new warnings and SQL errors. "
             "4) propose_change with the same files, a clear title, and a rationale in plain "
             "English. 5) Poll get_proposal to see whether it was accepted or rejected, and "
             "to read the person's comments. 6) If they ask for changes, call "
             "propose_change again with revises set to the old proposal id; the old one is "
-            "marked superseded."
+            "marked superseded. Models can carry business rules (see list_rules and the "
+            "rules field of get_model and explain). If a change touches a rule, say so in "
+            "the rationale and name the rule."
         ),
         version=__version__,
     )
+
+    def _rules_for(model: str) -> list[dict[str, Any]]:
+        return [
+            {
+                "id": m.rule.id,
+                "name": m.rule.name,
+                "description": m.rule.description,
+                "owner": m.rule.owner,
+                "columns": m.columns,
+            }
+            for m in state.rules().applied_to(model)
+        ]
 
     @server.tool()
     def list_models() -> list[dict[str, Any]]:
@@ -53,12 +67,28 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
         node = state.project().get(name)
         if node is None:
             raise ValueError(f"No model named {name!r}")
-        return node.model_dump(mode="json")
+        data = node.model_dump(mode="json")
+        data["rules"] = _rules_for(node.name)
+        return data
 
     @server.tool()
     def explain(name: str) -> dict[str, Any]:
         """Explain in plain English what a model does, step by step."""
-        return explain_model(state.project(), name).model_dump(mode="json")
+        data = explain_model(state.project(), name).model_dump(mode="json")
+        data["rules"] = _rules_for(data["model"])
+        return data
+
+    @server.tool()
+    def list_rules() -> dict[str, Any]:
+        """List business rules with their owner and the models and columns they apply to.
+
+        Changes that touch a rule must say so in the rationale.
+        """
+        registry = state.rules()
+        return {
+            "rules": [r.model_dump(mode="json") for r in registry.rules],
+            "warnings": registry.warnings,
+        }
 
     @server.tool()
     def impact_of(name: str) -> dict[str, list[str]]:

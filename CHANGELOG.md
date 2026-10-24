@@ -14,6 +14,10 @@ All notable changes are listed here. The format follows
 - `openpipeline review` and a GitHub Action for PR summaries.
 - Web UI with the graph, story panel, and proposals review.
 - MCP server so AI agents can read the project and propose changes.
+- Business rules: name them in `openpipeline.yml`, link them from `meta.rules`,
+  see them in the Rules tab and the model panel, and get them flagged in PR
+  summaries. Adds `openpipeline rules`, `GET /api/rules`,
+  `GET /api/models/{name}/rules`, and the `list_rules` MCP tool.
 - Docker image, Compose file, CI, and release workflow.
 - Edit a model's description and column descriptions in the UI. Saving writes to the
   model's YAML file and keeps its comments.

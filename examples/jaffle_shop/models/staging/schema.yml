@@ -11,3 +11,5 @@ models:
     description: Orders with test orders removed.
   - name: stg_payments
     description: Payments with amounts converted from cents to dollars.
+    meta:
+      rules: [amounts-in-dollars]

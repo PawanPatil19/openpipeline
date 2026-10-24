@@ -14,9 +14,11 @@ from openpipeline_core import (
     ModelGraph,
     Project,
     ProjectLoadError,
+    Rule,
     diff_projects,
     explain_model,
     load_project,
+    load_rules,
     render_diff_markdown,
 )
 
@@ -157,8 +159,13 @@ def review(
     ] = False,
 ) -> None:
     """Summarise what changed between two versions of a project, for a PR comment."""
-    head_project = _load(head)
-    diff = diff_projects(_load(base), head_project)
+    base_project, head_project = _load(base), _load(head)
+    diff = diff_projects(
+        base_project,
+        head_project,
+        base_rules=load_rules(base, base_project),
+        head_rules=load_rules(head, head_project),
+    )
     md = render_diff_markdown(diff)
     if ai and not diff.is_empty:
         try:
@@ -174,3 +181,32 @@ def review(
         output.write_text(md, encoding="utf-8")
     else:
         typer.echo(md)
+
+
+@app.command()
+def rules(
+    project_dir: ProjectDir = Path("."),
+    as_json: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """List business rules, grouped by owner."""
+    project = _load(project_dir)
+    registry = load_rules(project_dir, project)
+    if as_json:
+        typer.echo(registry.model_dump_json(indent=2))
+        return
+    if not registry.rules:
+        typer.echo("No business rules found. Add them to openpipeline.yml.")
+    by_owner: dict[str, list[Rule]] = {}
+    for rule in registry.rules:
+        by_owner.setdefault(rule.owner or "No owner", []).append(rule)
+    for owner in sorted(by_owner, key=lambda o: (o == "No owner", o)):
+        typer.secho(owner, bold=True)
+        for rule in sorted(by_owner[owner], key=lambda r: r.name.lower()):
+            typer.echo(f"  {rule.name} ({rule.id})")
+            if rule.description:
+                typer.echo(f"    {' '.join(rule.description.split())}")
+            for link in rule.applies_to:
+                cols = f" [{', '.join(link.columns)}]" if link.columns else ""
+                typer.echo(f"    applies to {link.model}{cols}")
+    for warning in registry.warnings:
+        typer.secho(f"warning: {warning}", fg=typer.colors.YELLOW, err=True)

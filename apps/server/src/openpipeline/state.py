@@ -5,7 +5,7 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from openpipeline_core import ModelGraph, Project, load_project
+from openpipeline_core import ModelGraph, Project, RuleRegistry, load_project, load_rules
 
 _WATCHED = {".sql", ".yml", ".yaml", ".csv", ".json"}
 _SKIP_DIRS = {".git", "node_modules", "dbt_packages", ".openpipeline", "logs"}
@@ -18,6 +18,7 @@ class ProjectState:
         self._fingerprint: tuple[int, int] | None = None
         self._project: Project | None = None
         self._graph: ModelGraph | None = None
+        self._rules: RuleRegistry | None = None
 
     def project(self) -> Project:
         self._refresh()
@@ -29,6 +30,12 @@ class ProjectState:
         assert self._graph is not None
         return self._graph
 
+    def rules(self) -> RuleRegistry:
+        """Business rules from ``openpipeline.yml`` and ``meta.rules`` links."""
+        self._refresh()
+        assert self._rules is not None
+        return self._rules
+
     def _refresh(self) -> None:
         fp = self._compute_fingerprint()
         with self._lock:
@@ -36,6 +43,7 @@ class ProjectState:
                 return
             self._project = load_project(self.root)
             self._graph = ModelGraph(self._project)
+            self._rules = load_rules(self.root, self._project)
             self._fingerprint = fp
 
     def _compute_fingerprint(self) -> tuple[int, int]:

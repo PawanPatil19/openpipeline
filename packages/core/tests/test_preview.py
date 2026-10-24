@@ -94,3 +94,15 @@ def test_fast_enough(example_dir: Path) -> None:
     start = time.perf_counter()
     preview_changes(example_dir, [("models/marts/revenue.sql", "select 1 as x")])
     assert time.perf_counter() - start < 2
+
+
+def test_preview_reports_business_rules_touched(example_dir: Path) -> None:
+    project = example_dir
+    sql = (project / "models" / "marts" / "customers.sql").read_text()
+    preview = preview_changes(
+        project,
+        [("models/marts/customers.sql", sql.replace("sum(o.amount)", "sum(o.amount) * 2"))],
+    )
+    touched = {r.id for r in preview.diff.rule_impacts if r.level == "touched"}
+    assert "lifetime-value" in touched
+    assert any(line.startswith("Touches business rules:") for line in preview.summary)
