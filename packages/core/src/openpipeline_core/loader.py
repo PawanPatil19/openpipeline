@@ -136,10 +136,10 @@ def _load_from_files(root: Path, config: dict[str, Any]) -> Project:
         for yml in sorted([*d.rglob("*.yml"), *d.rglob("*.yaml")]) if d.is_dir() else []:
             data = _read_yaml(yml)
             rel = str(yml.relative_to(root))
-            for entry in data.get("models", []) + data.get("seeds", []):
+            for entry in (data.get("models") or []) + (data.get("seeds") or []):
                 if isinstance(entry, dict) and "name" in entry:
                     yml_models[entry["name"]] = entry
-            for src in data.get("sources", []):
+            for src in data.get("sources") or []:
                 _add_source(project, name, src, rel)
 
     pending_refs: dict[str, list[str]] = {}
@@ -170,7 +170,7 @@ def _load_from_files(root: Path, config: dict[str, Any]) -> Project:
                     or _folder_materialization(config, name, f.relative_to(d).parts[:-1])
                     if kind == NodeKind.MODEL
                     else None,
-                    columns=[_column(c) for c in doc.get("columns", []) if isinstance(c, dict)],
+                    columns=[_column(c) for c in doc.get("columns") or [] if isinstance(c, dict)],
                     tags=list((doc.get("config") or {}).get("tags", doc.get("tags", [])) or []),
                     meta=dict(doc.get("meta") or (doc.get("config") or {}).get("meta") or {}),
                 )
@@ -201,7 +201,7 @@ def _add_source(project: Project, pkg: str, src: dict[str, Any], rel_path: str) 
     src_name = src.get("name")
     if not src_name:
         return
-    for table in src.get("tables", []):
+    for table in src.get("tables") or []:
         if not isinstance(table, dict) or "name" not in table:
             continue
         uid = f"source.{pkg}.{src_name}.{table['name']}"
@@ -211,7 +211,7 @@ def _add_source(project: Project, pkg: str, src: dict[str, Any], rel_path: str) 
             kind=NodeKind.SOURCE,
             description=table.get("description") or src.get("description") or "",
             path=rel_path,
-            columns=[_column(c) for c in table.get("columns", []) if isinstance(c, dict)],
+            columns=[_column(c) for c in table.get("columns") or [] if isinstance(c, dict)],
             meta=dict(table.get("meta") or {}),
         )
 

@@ -85,3 +85,11 @@ def test_loads_from_manifest_when_present(tmp_path: Path) -> None:
     assert project.get("raw.t").kind == NodeKind.SOURCE  # type: ignore[union-attr]
 
     assert load_project(tmp_path, prefer_manifest=False).loaded_from == "files"
+
+
+def test_tolerates_empty_yaml_sections(tmp_path: Path) -> None:
+    (tmp_path / "dbt_project.yml").write_text("name: demo\n")
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "schema.yml").write_text("version: 2\nmodels:\nsources:\n")
+    (tmp_path / "models" / "a.sql").write_text("select 1 as x")
+    assert [m.name for m in load_project(tmp_path).models()] == ["a"]

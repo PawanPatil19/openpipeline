@@ -79,3 +79,4 @@ def test_serves_ui_when_built(project_dir: Path, tmp_path: Path, monkeypatch) ->
     assert "openpipeline" in client.get("/").text
     assert "openpipeline" in client.get("/models/customers").text  # SPA fallback
     assert client.get("/api/health").status_code == 200
+    assert client.get("/api/does-not-exist").status_code == 404

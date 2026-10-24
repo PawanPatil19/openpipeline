@@ -105,6 +105,8 @@ def create_app(project_dir: str | Path, *, serve_ui: bool = True) -> FastAPI:
 
         @app.get("/{path:path}", include_in_schema=False)
         def spa(path: str) -> FileResponse:
+            if path == "api" or path.startswith("api/"):
+                raise HTTPException(status_code=404, detail="Not found")
             candidate = (STATIC_DIR / path).resolve()
             if path and candidate.is_file() and candidate.is_relative_to(STATIC_DIR):
                 return FileResponse(candidate)
