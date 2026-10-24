@@ -6,6 +6,12 @@ All notable changes are listed here. The format follows
 
 ## Unreleased
 
+### Website
+
+- A landing page, the docs, and a read-only live demo of the web UI, hosted on Vercel
+  at <https://openpipeline.vercel.app/>. It replaces the GitHub Pages docs site.
+- `make site` builds it into `build/site` with `scripts/build_site.sh`.
+
 ## 1.0.0 - 2026-10-24
 
 The first stable release. OpenPipeline reads a dbt project and explains it in plain

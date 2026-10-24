@@ -111,6 +111,22 @@ button.primary {
   height: 100vh;
 }
 
+.demo-banner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  background: var(--accent-soft);
+  color: var(--text);
+  padding: 5px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-banner a {
+  color: var(--accent);
+}
+
 .topbar {
   display: flex;
   align-items: center;

@@ -2,6 +2,8 @@
 
 **See what your dbt project does, in plain English. Review every change before it lands.**
 
+Live demo: <https://openpipeline.vercel.app/demo/>
+
 OpenPipeline opens a dbt project you already have and gives everyone, not just the
 people who wrote the SQL, a way to understand it and to review changes to it,
 whether a teammate or an AI agent made them. It never runs dbt, never connects to
@@ -83,7 +85,7 @@ claude mcp add openpipeline -- openpipeline mcp /path/to/dbt/project
 The agent can look at everything, but it can only propose edits. It reads with
 `explain`, `search`, `column_lineage`, `impact_of`, and `list_rules`, checks its work
 with `preview_change` and `sample_rows`, and files changes with `propose_change`
-or `propose_docs`. See [Working with AI agents](https://pawanpatil19.github.io/openpipeline/guides/ai-agents/).
+or `propose_docs`. See [Working with AI agents](https://openpipeline.vercel.app/docs/guides/ai-agents/).
 
 ## Command line
 
@@ -104,7 +106,7 @@ command with `--help` for its options.
 ## Documentation
 
 Guides, the command line, HTTP API, and configuration reference are at
-**<https://pawanpatil19.github.io/openpipeline/>**.
+**<https://openpipeline.vercel.app/docs/>**.
 
 ## How it is built
 

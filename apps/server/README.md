@@ -13,5 +13,5 @@ openpipeline serve path/to/your/dbt/project         # use it on yours
 Optional extras: `openpipeline[ai]` for AI explanations with your own Anthropic key,
 and `openpipeline[preview]` for sample rows run locally with DuckDB.
 
-Documentation: <https://pawanpatil19.github.io/openpipeline/>
+Documentation: <https://openpipeline.vercel.app/docs/>
 Source and issues: <https://github.com/PawanPatil19/openpipeline>
