@@ -15,6 +15,7 @@ build/
 # Node
 node_modules/
 apps/web/dist/
+apps/web/dist-demo/
 *.tsbuildinfo
 
 # The web UI build is copied into the Python package at build time.
@@ -32,4 +33,3 @@ logs/
 .vscode/*
 !.vscode/extensions.json
 .env
-site/

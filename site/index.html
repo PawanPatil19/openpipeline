@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenPipeline</title>
+    <meta
+      name="description"
+      content="See what your dbt project does, in plain English. Review every change before it lands."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap top__row">
+        <a class="brand" href="/">OpenPipeline</a>
+        <nav aria-label="Site">
+          <a href="/demo/">Demo</a>
+          <a href="/docs/">Docs</a>
+          <a href="https://github.com/PawanPatil19/openpipeline">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero wrap">
+        <h1>See what your dbt project does, in plain English.</h1>
+        <p class="lede">Review every change before it lands.</p>
+        <p class="actions">
+          <a class="btn btn--primary" href="/demo/">Try the live demo</a>
+          <a class="btn" href="/docs/">Read the docs</a>
+          <a class="btn" href="https://github.com/PawanPatil19/openpipeline">GitHub</a>
+        </p>
+        <figure class="shot">
+          <img
+            src="/assets/graph.png"
+            width="1360"
+            height="820"
+            alt="The OpenPipeline model graph for the jaffle_shop example"
+          />
+        </figure>
+      </section>
+
+      <section class="wrap" aria-labelledby="who">
+        <h2 id="who">Built for the people around your data</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>Business readers</h3>
+            <p>
+              Click a box and read what the model does, where its data comes from, and what one row
+              means. No SQL needed. Business rules are named, owned, and linked to the models that
+              carry them.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Data engineers</h3>
+            <p>
+              Nothing to migrate. It reads your plain dbt files, writes plain dbt files, does not
+              run dbt, and needs no warehouse credentials. Stop any time and your project is as it
+              was.
+            </p>
+          </article>
+          <article class="card">
+            <h3>AI agents</h3>
+            <p>
+              An MCP server lets agents such as Claude read the project and <em>propose</em>
+              changes. A person reviews each one on the graph and accepts or rejects it. Agents
+              never write to your project directly.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="wrap" aria-labelledby="try">
+        <h2 id="try">Try it in one command</h2>
+        <pre class="code"><code>pip install openpipeline
+openpipeline demo</code></pre>
+        <p class="muted">
+          This copies the bundled jaffle_shop example to a temporary folder, files one pending
+          proposal from an imaginary agent, and starts the server at http://127.0.0.1:8484. Or
+          <a href="/demo/">poke at a read-only copy</a> right here.
+        </p>
+      </section>
+
+      <section class="wrap" aria-labelledby="see">
+        <h2 id="see">What it looks like</h2>
+        <div class="shots">
+          <figure class="shot">
+            <img
+              src="/assets/story.png"
+              width="1360"
+              height="820"
+              loading="lazy"
+              alt="A model open in OpenPipeline: its plain-English story, columns, and rules next to the graph"
+            />
+            <figcaption>Each model explained step by step, in plain words.</figcaption>
+          </figure>
+          <figure class="shot">
+            <img
+              src="/assets/review.png"
+              width="1360"
+              height="820"
+              loading="lazy"
+              alt="A pending proposal shown on the graph, with the new model in green"
+            />
+            <figcaption>A proposed change shown on the graph before anyone accepts it.</figcaption>
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p>
+          OpenPipeline is open source under the Apache 2.0 license.
+          <a href="https://github.com/PawanPatil19/openpipeline">GitHub</a> ·
+          <a href="/docs/">Docs</a> ·
+          <a href="https://github.com/PawanPatil19/openpipeline/issues">Report an issue</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

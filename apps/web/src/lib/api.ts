@@ -1,5 +1,7 @@
 // Types mirror the Python API in apps/server/src/openpipeline/api.py.
 
+import { DEMO_READ_ONLY_MESSAGE, demoUrl, isDemo, searchGraph } from "./demo";
+
 export type NodeKind = "model" | "source" | "seed" | "snapshot";
 
 export interface GraphNode {
@@ -242,6 +244,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (isDemo()) return demoRequest<T>(path, init);
   const res = await fetch(path, {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
@@ -254,6 +257,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, detail ?? res.statusText);
   }
+  return res.json() as Promise<T>;
+}
+
+/** The hosted demo: read the exported JSON, search in the browser, refuse every write. */
+async function demoRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  if (init?.method && init.method !== "GET") {
+    throw new ApiError(403, DEMO_READ_ONLY_MESSAGE);
+  }
+  const url = new URL(path, "http://demo.invalid");
+  if (url.pathname === "/api/search") {
+    const graph = await request<Graph>("/api/graph");
+    const limit = Number(url.searchParams.get("limit") ?? 20);
+    return searchGraph(graph, url.searchParams.get("q") ?? "", limit) as T;
+  }
+  const res = await fetch(demoUrl(path));
+  if (!res.ok) throw new ApiError(res.status, "This part of the demo was not exported.");
   return res.json() as Promise<T>;
 }
 

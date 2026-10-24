@@ -4,10 +4,15 @@ import { defineConfig } from "vite";
 
 // The production build is written into the Python package so `openpipeline serve`
 // ships the UI with no separate web server.
-export default defineConfig({
+//
+// `vite build --mode demo` makes the hosted read-only demo instead: .env.demo sets
+// VITE_DEMO=1, the app is served from /demo/, and the output goes to ./dist-demo unless
+// --outDir says otherwise (scripts/build_site.sh does).
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  base: mode === "demo" ? "/demo/" : "/",
   build: {
-    outDir: "../server/src/openpipeline/static",
+    outDir: mode === "demo" ? "dist-demo" : "../server/src/openpipeline/static",
     emptyOutDir: true,
   },
   server: {
@@ -22,4 +27,4 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
   },
-});
+}));

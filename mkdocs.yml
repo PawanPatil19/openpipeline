@@ -1,6 +1,7 @@
 site_name: OpenPipeline
 site_description: See what your dbt project does, in plain English. Review every change before it lands.
-site_url: https://pawanpatil19.github.io/openpipeline/
+site_url: !ENV [SITE_URL, "https://openpipeline.vercel.app/docs/"]
+site_dir: build/docs
 repo_url: https://github.com/PawanPatil19/openpipeline
 repo_name: PawanPatil19/openpipeline
 edit_uri: edit/main/docs/

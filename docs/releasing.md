@@ -41,18 +41,13 @@ These need a repository admin and only have to be done once, before the first ta
 - **GitHub environment.** Create an environment named `pypi` under
   Settings > Environments. Adding yourself as a required reviewer gives every
   release a final manual approval.
-- **GitHub Pages.** The docs site is deployed by the docs workflow. In the
-  repository, go to Settings > Pages > Source and choose **GitHub Actions**. A push
-  to `main` that changes `docs/**`, `mkdocs.yml`, `pyproject.toml`, or `uv.lock`
-  then publishes the site at https://pawanpatil19.github.io/openpipeline/. GitHub
-  creates the `github-pages` environment for you.
 - **GHCR visibility.** The first image is pushed as a private package. After it
   appears, make `openpipeline` public under the repository's Packages settings so
   `docker pull ghcr.io/pawanpatil19/openpipeline` works without logging in.
 - **Branch protection.** Require the `All checks passed` status on `main`. It
   covers the Python matrix, the web checks, the Docker build, and the PR summary
-  action. The docs build runs only when docs files change, so add `Build docs` as a
-  required check as well if you want it enforced.
+  action. The site build (`Build docs`) runs only when site, docs, or web files change, so add
+  it as a required check as well if you want it enforced.
 
 ## Cutting 1.0.0
 
@@ -70,5 +65,24 @@ These need a repository admin and only have to be done once, before the first ta
 8. Make the GHCR package public if this is the first image.
 9. Try it from scratch: `pip install openpipeline==1.0.0` and `openpipeline demo`,
    then `docker run --rm -p 8484:8484 ghcr.io/pawanpatil19/openpipeline:1.0.0`.
-10. Check that https://pawanpatil19.github.io/openpipeline/ is live and that the
+10. Check that https://openpipeline.vercel.app/ (the landing page, `/docs/`, and `/demo/`) is live and that the
     pull request action works with `@v1.0.0`.
+
+## Website (Vercel)
+
+The website at https://openpipeline.vercel.app/ deploys from `main` through Vercel's
+Git integration. Every push to `main` is a production deploy, and every pull request
+gets a preview deploy. It is one static site:
+
+- `/` is the landing page in `site/`.
+- `/docs/` is the mkdocs site.
+- `/demo/` is a read-only copy of the web UI. `scripts/export_demo.py` writes the
+  demo project's API answers as JSON files that the UI reads instead of a server.
+
+`scripts/build_site.sh` builds all three into `build/site`, and `make site` runs it
+locally. The `Site` workflow runs the same script on pull requests.
+
+One-time setup: in Vercel, choose Add New > Project, import this repository, and leave
+Root Directory at the repository root. Everything else comes from `vercel.json`. If the
+project gets a different production domain, set `VERCEL_PROJECT_PRODUCTION_URL` (Vercel
+sets it for you) and update the links in `README.md`.

@@ -1,24 +1,25 @@
-name: Docs
+name: Site
 
-# Pull requests that touch the docs are built with --strict so broken links and
-# bad nav fail the check. Pushes to main build the same site and deploy it to
-# GitHub Pages. One-time setup: Settings > Pages > Source: GitHub Actions.
+# The website is deployed by Vercel's Git integration (see docs/releasing.md). This
+# workflow builds the same site on pull requests, so a broken docs link (mkdocs
+# --strict), demo export, or web demo build fails the check before Vercel sees it.
 
 on:
   pull_request:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "site/**"
+      - "scripts/build_site.sh"
+      - "scripts/export_demo.py"
+      - "vercel.json"
+      - "apps/web/**"
+      - "apps/server/**"
+      - "packages/core/**"
+      - "examples/**"
       - "pyproject.toml"
       - "uv.lock"
-      - ".github/workflows/docs.yml"
-  push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - "pyproject.toml"
-      - "uv.lock"
+      - "pnpm-lock.yaml"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -27,7 +28,7 @@ permissions:
 
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -38,24 +39,9 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv sync --locked --only-group docs
-      - run: uv run --no-sync mkdocs build --strict
-      - uses: actions/upload-pages-artifact@v4
-        if: github.event_name != 'pull_request'
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          path: site
-
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: bash scripts/build_site.sh

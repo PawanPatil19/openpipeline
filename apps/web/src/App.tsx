@@ -8,6 +8,7 @@ import { SearchBox } from "./components/SearchBox";
 import { StoryPanel } from "./components/StoryPanel";
 import { api } from "./lib/api";
 import { ColumnFocusContext } from "./lib/columnFocus";
+import { DEMO_COMMAND, isDemo } from "./lib/demo";
 import { useGraphFocus } from "./lib/useGraphFocus";
 
 type Tab = "model" | "rules" | "proposals";
@@ -41,6 +42,14 @@ export function App() {
 
   return (
     <div className="app">
+      {isDemo() && (
+        <div className="demo-banner" role="note">
+          <span>
+            Read-only demo. Run <code>{DEMO_COMMAND}</code> to try it for real.
+          </span>
+          <a href="/">About OpenPipeline</a>
+        </div>
+      )}
       <header className="topbar">
         <span className="brand">OpenPipeline</span>
         {project.data && (
