@@ -1,5 +1,6 @@
 """OpenPipeline core: read a dbt project, build its graph, and explain it."""
 
+from openpipeline_core.compile import PreviewPlan, UnsupportedJinja, compile_sql, plan_preview
 from openpipeline_core.diff import (
     ModelChange,
     ProjectDiff,
@@ -31,6 +32,7 @@ __all__ = [
     "Node",
     "NodeKind",
     "ParseIssue",
+    "PreviewPlan",
     "Project",
     "ProjectDiff",
     "ProjectLoadError",
@@ -39,11 +41,14 @@ __all__ = [
     "RuleImpact",
     "RuleLink",
     "RuleRegistry",
+    "UnsupportedJinja",
     "__version__",
+    "compile_sql",
     "diff_projects",
     "explain_model",
     "load_project",
     "load_rules",
+    "plan_preview",
     "preview_changes",
     "render_diff_markdown",
     "update_docs",

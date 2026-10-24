@@ -35,6 +35,17 @@ core in a Typer CLI, a FastAPI app, and an MCP server. `ProjectState` caches the
 loaded project and reloads it when any SQL, YAML, CSV, or manifest file
 changes, so the UI and agents always see what is on disk.
 
+**Sample row previews** are split across both packages. Core has the parts that
+need no database: `compile_sql` turns a model's SQL into plain SQL by replacing
+`ref()` and `source()` with table names (and refuses other Jinja), and
+`plan_preview` lists the upstream models in build order with the sources and
+seeds they need. The server's `sample.py` holds the engine. It opens an
+in-memory DuckDB, loads seeds and the files in `sample_data/` as tables, creates
+a view for each upstream model after transpiling its SQL to DuckDB with sqlglot,
+and selects a few rows from the target. External file access is switched off
+before any model SQL runs, and a timer interrupts slow queries. DuckDB is an
+optional extra (`openpipeline[preview]`), so core never imports it.
+
 **`apps/web`** is a React single-page app. It talks only to `/api`. In
 production it is built into the Python package and served by FastAPI, so there
 is one process and one port. In development Vite serves it with hot reload and

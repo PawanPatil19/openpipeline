@@ -99,6 +99,26 @@ export interface Comment {
   created_at: string;
 }
 
+export interface SampleError {
+  message: string;
+  model: string | null;
+  missing_table: string | null;
+}
+
+export interface SampleResult {
+  columns: string[];
+  rows: unknown[][];
+  row_limit: number;
+  error: SampleError | null;
+}
+
+export interface SampleStatus {
+  duckdb: boolean;
+  install_hint: string | null;
+  sample_data: string | null;
+  tables: { name: string; kind: string; path: string }[];
+}
+
 export interface Proposal {
   id: string;
   title: string;
@@ -223,6 +243,9 @@ export const api = {
   impact: (name: string) => request<Impact>(`/api/models/${enc(name)}/impact`),
   rules: () => request<RulesResponse>("/api/rules"),
   modelRules: (name: string) => request<ModelRule[]>(`/api/models/${enc(name)}/rules`),
+  sampleStatus: () => request<SampleStatus>("/api/sample/status"),
+  sample: (name: string, limit = 20) =>
+    request<SampleResult>(`/api/models/${enc(name)}/sample?limit=${limit}`),
   proposals: () => request<Proposal[]>("/api/proposals"),
   decide: (
     id: string,

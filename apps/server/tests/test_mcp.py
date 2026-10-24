@@ -34,6 +34,7 @@ def test_tools_are_registered(project_dir: Path) -> None:
         "get_proposal",
         "propose_docs",
         "list_proposals",
+        "sample_rows",
     }
 
 
@@ -95,3 +96,14 @@ def test_propose_docs_needs_something_to_change(project_dir: Path) -> None:
     server = create_mcp_server(project_dir)
     with pytest.raises(ToolError, match="Give a description"):
         asyncio.run(server.call_tool("propose_docs", {"model": "customers"}))
+
+
+def test_sample_rows(project_dir: Path) -> None:
+    pytest.importorskip("duckdb")
+    server = create_mcp_server(project_dir)
+    result = _call(server, "sample_rows", {"name": "customers", "limit": 3})
+    assert result["error"] is None
+    assert len(result["rows"]) == 3
+    (project_dir / "sample_data" / "raw.customers.csv").unlink()
+    missing = _call(server, "sample_rows", {"name": "customers"})
+    assert missing["error"]["missing_table"] == "raw.customers"

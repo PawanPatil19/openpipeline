@@ -34,3 +34,8 @@ All notable changes are listed here. The format follows
   was made. "Accept anyway" overrides it.
 - MCP tools `preview_change` (dry run) and `get_proposal`, and a `revises` option
   on `propose_change`, so agents can check their work and answer feedback.
+- Preview sample rows of a model with an in-memory DuckDB, from seeds, a
+  `sample_data/` folder, or a `.duckdb` file. Available in the UI, as
+  `openpipeline sample`, and as the `sample_rows` MCP tool. Install with
+  `openpipeline[preview]`; the Docker image includes it. The sample data folder
+  and SQL dialect can also be set in a `preview:` section of `openpipeline.yml`.

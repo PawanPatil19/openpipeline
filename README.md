@@ -61,6 +61,7 @@ openpipeline graph [PROJECT]            # print the model graph as JSON
 openpipeline rules [PROJECT]            # business rules, grouped by owner
 openpipeline review BASE HEAD           # Markdown summary of the change between two versions
 openpipeline review BASE HEAD --ai      # same, with a plain-words overview at the top
+openpipeline sample customers [PROJECT] # a few rows of a model, on sample data
 openpipeline mcp [PROJECT]              # MCP server over stdio for local agents
 openpipeline mcp --transport streamable-http   # MCP over HTTP on :8485
 ```
@@ -76,7 +77,7 @@ claude mcp add openpipeline -- openpipeline mcp /path/to/dbt/project
 ```
 
 The agent gets these tools: `list_models`, `get_model`, `explain`, `impact_of`,
-`list_rules`, `preview_change`, `propose_change`, `propose_docs`,
+`list_rules`, `sample_rows`, `preview_change`, `propose_change`, `propose_docs`,
 `get_proposal`, and `list_proposals`. It can look at everything, but it can only propose edits.
 Nothing is written until you accept.
 
@@ -160,6 +161,50 @@ You can also link from dbt's own YAML with `meta: {rules: [lifetime-value]}` on
 a model or a column. The **Rules** tab lists every rule, the model panel shows
 the rules a model carries, and PR summaries list the rules a change touches and
 the owners to loop in. See [docs/rules.md](docs/rules.md).
+
+## Preview sample rows
+
+Seeing a few rows is the fastest way to understand a model. OpenPipeline can run
+a model's SQL on small sample data, on your own machine, in an in-memory
+[DuckDB](https://duckdb.org). It never connects to your warehouse and never
+writes to disk. The Docker image includes it. With pip, add the extra:
+
+```bash
+pip install 'openpipeline[preview]'
+```
+
+Open a model in the UI and expand **Sample rows**, or run
+`openpipeline sample customers`. Agents can call the `sample_rows` tool.
+
+Sample data comes from these places, in this order:
+
+1. **Seeds.** Each CSV in your `seed-paths` becomes a table named after the file.
+2. **A sample data folder.** By default this is `sample_data/` in your project.
+   Use `--sample-data PATH` or `$OPENPIPELINE_SAMPLE_DATA` to point somewhere
+   else. Name each file `<source>.<table>.csv` or `.parquet`. For example
+   `raw.orders.csv` backs `source('raw', 'orders')`.
+3. **A DuckDB file.** Pass a `.duckdb` file in the same way. It is opened
+   read-only. Put each source's tables in a schema named after the source.
+
+OpenPipeline builds every model upstream of the one you pick, then shows up to 20
+rows (200 at most). If a table is missing, it tells you which one to add. Pass
+`--dialect` or set `$OPENPIPELINE_DIALECT` (for example `snowflake`) so the SQL is
+read in your warehouse's dialect. A preview that runs longer than five seconds is
+stopped. Models that use macros, `var()` or other Jinja beyond `ref()` and
+`source()` cannot be previewed, because OpenPipeline does not run dbt.
+
+To set these once for everyone, add a `preview:` section to `openpipeline.yml`.
+A flag wins over an environment variable, and an environment variable wins over
+the file.
+
+```yaml
+preview:
+  sample_data: sample_data   # a folder or a .duckdb file, relative to the project
+  dialect: snowflake
+```
+
+The [jaffle_shop example](examples/jaffle_shop/sample_data) includes sample data
+for all of its models.
 
 ## PR summaries on GitHub
 

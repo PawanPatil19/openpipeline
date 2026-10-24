@@ -34,6 +34,23 @@ ProjectDir = Annotated[
     typer.Argument(envvar="OPENPIPELINE_PROJECT_DIR", help="Path to a dbt project."),
 ]
 
+SampleDataOpt = Annotated[
+    Path | None,
+    typer.Option(
+        "--sample-data",
+        envvar="OPENPIPELINE_SAMPLE_DATA",
+        help="Folder of sample CSV or Parquet files, or a .duckdb file, for row previews.",
+    ),
+]
+DialectOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--dialect",
+        envvar="OPENPIPELINE_DIALECT",
+        help="SQL dialect of the project, such as snowflake or bigquery.",
+    ),
+]
+
 
 def _load(path: Path) -> Project:
     try:
@@ -55,6 +72,8 @@ def serve(
     host: Annotated[str, typer.Option(envvar="OPENPIPELINE_HOST")] = "127.0.0.1",
     port: Annotated[int, typer.Option(envvar="OPENPIPELINE_PORT")] = 8484,
     reload: Annotated[bool, typer.Option(help="Restart on code changes (dev only).")] = False,
+    sample_data: SampleDataOpt = None,
+    dialect: DialectOpt = None,
 ) -> None:
     """Start the web UI and API."""
     import uvicorn
@@ -69,9 +88,15 @@ def serve(
         import os
 
         os.environ["OPENPIPELINE_PROJECT_DIR"] = str(project_dir.resolve())
+        if sample_data:
+            os.environ["OPENPIPELINE_SAMPLE_DATA"] = str(sample_data.resolve())
+        if dialect:
+            os.environ["OPENPIPELINE_DIALECT"] = dialect
         uvicorn.run("openpipeline.app:app", host=host, port=port, reload=True)
     else:
-        uvicorn.run(create_app(project_dir), host=host, port=port)
+        uvicorn.run(
+            create_app(project_dir, sample_data=sample_data, dialect=dialect), host=host, port=port
+        )
 
 
 @app.command()
@@ -82,15 +107,18 @@ def mcp(
     ] = "stdio",
     host: Annotated[str, typer.Option(envvar="OPENPIPELINE_HOST")] = "127.0.0.1",
     port: Annotated[int, typer.Option(envvar="OPENPIPELINE_MCP_PORT")] = 8485,
+    sample_data: SampleDataOpt = None,
+    dialect: DialectOpt = None,
 ) -> None:
     """Run the MCP server for AI agents."""
     from openpipeline.mcp_server import create_mcp_server
 
     _load(project_dir)
+    server = create_mcp_server(project_dir, sample_data=sample_data, dialect=dialect)
     if transport == "stdio":
-        create_mcp_server(project_dir).run("stdio")
+        server.run("stdio")
     elif transport == "streamable-http":
-        create_mcp_server(project_dir).run("streamable-http", host=host, port=port)
+        server.run("streamable-http", host=host, port=port)
     else:
         raise typer.BadParameter("transport must be stdio or streamable-http")
 
@@ -210,3 +238,42 @@ def rules(
                 typer.echo(f"    applies to {link.model}{cols}")
     for warning in registry.warnings:
         typer.secho(f"warning: {warning}", fg=typer.colors.YELLOW, err=True)
+
+
+@app.command()
+def sample(
+    model: Annotated[str, typer.Argument(help="Model name.")],
+    project_dir: ProjectDir = Path("."),
+    limit: Annotated[int, typer.Option(help="Rows to show (1 to 200).")] = 10,
+    sample_data: SampleDataOpt = None,
+    dialect: DialectOpt = None,
+) -> None:
+    """Show a few rows of a model, run on local sample data with DuckDB."""
+    from openpipeline.sample import SampleEngine
+    from openpipeline.state import ProjectState
+
+    _load(project_dir)
+    engine = SampleEngine(ProjectState(project_dir), sample_data=sample_data, dialect=dialect)
+    try:
+        result = engine.sample(model, limit)
+    except KeyError as exc:
+        typer.secho(str(exc.args[0]), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    if result.error:
+        typer.secho(result.error.message, fg=typer.colors.RED, err=True)
+        if result.error.missing_table:
+            typer.echo(
+                f"Add sample_data/{result.error.missing_table}.csv to preview this model.",
+                err=True,
+            )
+        raise typer.Exit(code=1)
+    cells = [[("" if v is None else str(v)) for v in row] for row in result.rows]
+    widths = [
+        max(len(col), *(len(r[i]) for r in cells)) if cells else len(col)
+        for i, col in enumerate(result.columns)
+    ]
+    typer.echo("  ".join(c.ljust(w) for c, w in zip(result.columns, widths, strict=True)).rstrip())
+    typer.echo("  ".join("-" * w for w in widths))
+    for r in cells:
+        typer.echo("  ".join(v.ljust(w) for v, w in zip(r, widths, strict=True)).rstrip())
+    typer.echo(f"({len(cells)} rows, limit {result.row_limit})")
