@@ -1,0 +1,42 @@
+[project]
+name = "openpipeline"
+dynamic = ["version"]
+description = "Explain and review dbt projects: model graph, plain-English stories, PR summaries, and an MCP server for AI agents."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+authors = [{ name = "OpenPipeline contributors" }]
+keywords = ["dbt", "data-engineering", "lineage", "mcp", "data-catalog"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
+]
+dependencies = [
+    "openpipeline-core==0.1.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "typer>=0.15",
+    "mcp>=2.0,<3",
+]
+
+[project.scripts]
+openpipeline = "openpipeline.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/PawanPatil19/openpipeline"
+Issues = "https://github.com/PawanPatil19/openpipeline/issues"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/openpipeline/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openpipeline"]
+# The web UI is built into src/openpipeline/static before packaging (see Makefile).
+artifacts = ["src/openpipeline/static/**"]

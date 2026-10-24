@@ -1,0 +1,28 @@
+name: Bug report
+description: Something does not work the way it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How can we reproduce it?
+      description: A small dbt model or project that shows the problem helps a lot.
+  - type: input
+    id: version
+    attributes:
+      label: OpenPipeline version
+      description: Output of `openpipeline version`
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: How are you running it?
+      options: [pip / uv, Docker, From source]

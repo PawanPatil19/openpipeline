@@ -1,0 +1,13 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/dist
+**/target
+**/.openpipeline
+apps/server/src/openpipeline/static
+.git
+.github
+docs

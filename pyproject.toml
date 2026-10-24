@@ -1,0 +1,59 @@
+[project]
+name = "openpipeline-workspace"
+version = "0.0.0"
+description = "Workspace root for OpenPipeline (not published)."
+requires-python = ">=3.11"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/core", "apps/server"]
+
+[tool.uv.sources]
+openpipeline-core = { workspace = true }
+openpipeline = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "openpipeline",
+    "openpipeline-core",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "types-PyYAML>=6.0",
+    "pre-commit>=4.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "C4", "PT"]
+ignore = ["E501"]  # The formatter handles line length.
+
+[tool.ruff.lint.isort]
+known-first-party = ["openpipeline_core", "openpipeline"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["openpipeline_core", "openpipeline"]
+mypy_path = ["packages/core/src", "apps/server/src"]
+plugins = ["pydantic.mypy"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["packages/core/tests", "apps/server/tests"]
+addopts = "-ra --import-mode=importlib"
+
+[tool.coverage.run]
+source = ["openpipeline_core", "openpipeline"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
