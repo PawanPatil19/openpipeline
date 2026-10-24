@@ -19,7 +19,7 @@ COPY pyproject.toml uv.lock ./
 COPY packages/core packages/core
 COPY apps/server apps/server
 COPY --from=web /src/apps/server/src/openpipeline/static apps/server/src/openpipeline/static
-RUN uv sync --locked --no-dev --no-editable --package openpipeline
+RUN uv sync --locked --no-dev --no-editable --package openpipeline --extra preview
 
 # --- 3. Small runtime image ---------------------------------------------------
 FROM python:3.13-slim

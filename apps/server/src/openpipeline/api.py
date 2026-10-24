@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -14,6 +14,7 @@ from openpipeline import __version__
 from openpipeline.ai import AIClient, AIError, AIExplanation, AIService, AIStatus, default_client
 from openpipeline.files import write_file
 from openpipeline.proposals import Proposal, ProposalStore, StaleProposalError, Status
+from openpipeline.sample import DEFAULT_LIMIT, MAX_LIMIT, SampleEngine, SampleResult, SampleStatus
 from openpipeline.state import ProjectState
 from openpipeline_core import (
     ChangePreview,
@@ -65,9 +66,15 @@ class CommentCreate(BaseModel):
 
 
 def create_app(
-    project_dir: str | Path, *, serve_ui: bool = True, ai_client: AIClient | None = None
+    project_dir: str | Path,
+    *,
+    serve_ui: bool = True,
+    ai_client: AIClient | None = None,
+    sample_data: str | Path | None = None,
+    dialect: str | None = None,
 ) -> FastAPI:
     state = ProjectState(project_dir)
+    sampler = SampleEngine(state, sample_data=sample_data, dialect=dialect)
     proposals = ProposalStore(state.root)
     ai = AIService(state.root, ai_client if ai_client is not None else default_client())
     app = FastAPI(title="OpenPipeline", version=__version__, docs_url="/api/docs")
@@ -158,6 +165,18 @@ def create_app(
     def model_rules(name: str) -> list[ModelRule]:
         node = node_or_404(name)
         return state.rules().applied_to(node.name)
+
+    @app.get("/api/sample/status")
+    def sample_status() -> SampleStatus:
+        return sampler.status()
+
+    @app.get("/api/models/{name}/sample")
+    def sample(name: str, limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT)) -> SampleResult:
+        node_or_404(name)
+        try:
+            return sampler.sample(name, limit)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"No model named {name!r}") from exc
 
     @app.get("/api/proposals")
     def list_proposals(status: Status | None = None) -> list[Proposal]:

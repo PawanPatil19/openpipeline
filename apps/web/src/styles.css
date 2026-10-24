@@ -656,3 +656,45 @@ button.primary {
 .model-rules p {
   margin: 2px 0 0;
 }
+
+.sample__toggle {
+  all: unset;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.sample__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sample__scroll {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.sample__table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.sample__table th,
+.sample__table td {
+  text-align: left;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.sample__table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  font-family: ui-monospace, Menlo, monospace;
+  font-weight: 500;
+}

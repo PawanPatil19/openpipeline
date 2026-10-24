@@ -107,3 +107,21 @@ def test_review_with_ai_failure_warns_and_keeps_summary(
     unavailable = runner.invoke(app, ["review", str(project_dir), str(head), "--ai"])
     assert unavailable.exit_code == 0
     assert "Warning" in unavailable.stderr
+
+
+def test_sample_prints_a_table(project_dir: Path) -> None:
+    pytest.importorskip("duckdb")
+    result = runner.invoke(app, ["sample", "orders", str(project_dir), "--limit", "3"])
+    assert result.exit_code == 0, result.output
+    assert "order_id" in result.stdout
+    assert "(3 rows, limit 3)" in result.stdout
+
+
+def test_sample_reports_missing_data(project_dir: Path, tmp_path: Path) -> None:
+    pytest.importorskip("duckdb")
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    result = runner.invoke(app, ["sample", "orders", str(project_dir), "--sample-data", str(empty)])
+    assert result.exit_code == 1
+    assert "raw.orders" in result.output
+    assert runner.invoke(app, ["sample", "nope", str(project_dir)]).exit_code == 1

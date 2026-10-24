@@ -14,12 +14,19 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from openpipeline import __version__
 from openpipeline.proposals import FileChange, Proposal, ProposalStore
+from openpipeline.sample import SampleEngine
 from openpipeline.state import ProjectState
 from openpipeline_core import DocsUpdate, explain_model, preview_changes, update_docs
 
 
-def create_mcp_server(project_dir: str | Path) -> MCPServer:
+def create_mcp_server(
+    project_dir: str | Path,
+    *,
+    sample_data: str | Path | None = None,
+    dialect: str | None = None,
+) -> MCPServer:
     state = ProjectState(project_dir)
+    sampler = SampleEngine(state, sample_data=sample_data, dialect=dialect)
     store = ProposalStore(state.root)
     server = MCPServer(
         "openpipeline",
@@ -129,6 +136,19 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
             "details": [c.model_dump(mode="json") for c in preview.diff.changes],
             "ok": not preview.new_warnings and not preview.parse_errors,
         }
+
+    @server.tool()
+    def sample_rows(name: str, limit: int = 10) -> dict[str, Any]:
+        """Run a model on small local sample data and return a few rows.
+
+        Use it to sanity-check logic. It runs in memory and never touches the
+        warehouse. If sample data is missing, ``error`` names the model and the
+        table to add.
+        """
+        try:
+            return sampler.sample(name, limit).model_dump(mode="json")
+        except KeyError as exc:
+            raise ValueError(f"No model named {name!r}") from exc
 
     @server.tool()
     def propose_change(
