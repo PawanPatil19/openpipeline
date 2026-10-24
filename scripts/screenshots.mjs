@@ -3,6 +3,8 @@
 //   openpipeline demo --port 8484          # in one terminal
 //   node scripts/screenshots.mjs           # in another; PNGs go to docs/assets
 //
+// Run `pnpm build` first so the server has a UI to serve.
+//
 // Usage: node scripts/screenshots.mjs [URL] [OUT_DIR]
 // Needs the `playwright` package and a Chromium it can launch. It builds nothing and
 // changes nothing in the project: it only looks at the pages.
@@ -41,12 +43,42 @@ await page.goto(url);
 await page.waitForSelector(".pnode");
 await shot("graph");
 
+// Search: open the box with the keyboard and show some results.
+await page.keyboard.press("Escape");
+await page.keyboard.press("/");
+await page.getByRole("combobox", { name: /Search/ }).fill("amount");
+await page.getByRole("option").first().waitFor();
+await shot("search");
+await page.getByRole("combobox", { name: /Search/ }).fill("");
+await page.keyboard.press("Escape");
+
 await page.locator(".pnode", { hasText: "customers" }).first().click();
 await page.getByRole("region", { name: /About customers/ }).waitFor();
 await shot("story");
 
+// Sample rows: open the section and scroll the side panel so the table is in view.
+await page.getByRole("button", { name: /Sample rows/ }).click();
+await page.locator(".sample__table tbody tr").first().waitFor();
+await page.locator(".sample").evaluate((el) => el.scrollIntoView({ block: "end" }));
+await shot("sample-rows");
+
+// Column lineage: pick a column, then scroll the panel to show where it comes from.
+await page.locator(".sample__toggle").click(); // Collapse again to keep the panel short.
+await page
+  .getByRole("region", { name: "Column lineage" })
+  .getByRole("button", { name: "lifetime_value", exact: true })
+  .click();
+await page.waitForSelector(".collineage__ref");
+await page
+  .getByRole("region", { name: "Column lineage" })
+  .evaluate((el) => el.scrollIntoView({ block: "start" }));
+await shot("lineage");
+
+// Click empty graph space to clear the selection before the next pages.
+await page.locator(".react-flow__pane").click({ position: { x: 600, y: 120 } });
 await page.getByRole("button", { name: /^Rules/ }).click();
 await page.waitForSelector("text=Lifetime value is what a customer has paid");
+await page.locator(".side").evaluate((el) => el.scrollTo(0, 0));
 await shot("rules");
 
 await page.getByRole("button", { name: /^Proposals/ }).click();

@@ -12,19 +12,16 @@ export ANTHROPIC_API_KEY=sk-ant-...
 openpipeline serve path/to/project
 ```
 
-The Docker image already includes the extra. Pass the key with
-`-e ANTHROPIC_API_KEY`.
+The Docker image does not include the extra. Use pip for this feature.
 
-Then select a model and click **Explain with AI**. The answer has:
+Then select a model and click **Explain with AI**. The panel shows a short
+summary in plain words and a list of things worth double-checking. Click **Ask
+again** to skip the cache and get a fresh answer.
 
-- a short summary in plain words,
-- things worth double-checking,
-- a suggested model description, and
-- suggested notes for each column.
-
-The buttons **Use as description** and **Use column notes** only fill in the
-editors. Nothing is saved until you click **Save**. See
-[Editing descriptions](editing-descriptions.md).
+The answer also holds a suggested model description and suggested notes for each
+column. The buttons **Use as description** and **Use column notes** put them in
+the editors. Nothing is saved until you click **Save description** or **Save
+column descriptions**. See [Editing descriptions](editing-descriptions.md).
 
 From the terminal:
 
@@ -32,15 +29,17 @@ From the terminal:
 openpipeline explain customers --ai
 ```
 
-If you do not have a key, the panel tells you what is missing instead of
-failing.
+If AI is not set up, the button is hidden and a note at the bottom of the model
+panel tells you what is missing. `openpipeline explain --ai` prints the same
+reason as a warning and still shows the normal story.
 
 ## Bring your own key
 
 OpenPipeline never ships a key and has no account system. Calls go from your
 machine straight to Anthropic with your key, and you pay Anthropic for them. The
 key is read from the usual places: `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`,
-or a profile set up with the Anthropic command line tool.
+`ANTHROPIC_PROFILE`, or a profile set up with the Anthropic command line tool
+(`ant auth login`).
 
 ## Privacy
 

@@ -139,3 +139,10 @@ def test_review_lists_columns_used_downstream(project_dir: Path, tmp_path: Path)
     result = runner.invoke(app, ["review", str(project_dir), str(head)])
     assert result.exit_code == 0
     assert "Removed column `amount` is used by `customers.lifetime_value`" in result.stdout
+
+
+def test_explain_help_shows_the_extra_name_in_brackets() -> None:
+    # Rich treats [ai] as markup and swallows it unless it is escaped.
+    result = runner.invoke(app, ["explain", "--help"], env={"COLUMNS": "200"})
+    assert result.exit_code == 0
+    assert "openpipeline[ai]" in result.output

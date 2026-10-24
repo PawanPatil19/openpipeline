@@ -15,16 +15,22 @@ your dbt project stays the source of truth.
 | `OPENPIPELINE_DIALECT` | none | SQL dialect of the project, for sample rows. For example `snowflake`. |
 | `OPENPIPELINE_AI` | on, if a key is present | Set to `off`, `0`, or `false` to switch [AI explanations](../guides/ai-explanations.md) off completely. |
 | `OPENPIPELINE_AI_MODEL` | `claude-opus-5-5` | Which Anthropic model to use for AI explanations. |
-| `ANTHROPIC_API_KEY` | none | Your Anthropic key. `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_PROFILE` also work. |
+| `ANTHROPIC_API_KEY` | none | Your Anthropic key. `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_PROFILE` also work, and so does a profile in `~/.config/anthropic` made with `ant auth login`. |
 
-Command line options win over environment variables.
+Command line options win over environment variables, and environment variables
+win over `openpipeline.yml`.
 
 ## openpipeline.yml
 
-The `openpipeline.yml` file sits next to `dbt_project.yml`. Today it holds your
-[business rules](../guides/business-rules.md):
+The `openpipeline.yml` file sits next to `dbt_project.yml`. It has two optional
+sections: `rules:` for your [business rules](../guides/business-rules.md) and
+`preview:` for [sample rows](../guides/sample-rows.md).
 
 ```yaml
+preview:
+  sample_data: sample_data   # a folder or a .duckdb file, relative to the project
+  dialect: snowflake
+
 rules:
   - id: shipped-revenue
     name: Revenue counts once an order is shipped
@@ -38,8 +44,14 @@ rules:
         columns: [revenue]
 ```
 
-The fields are explained on the [rules file format](../rules.md) page. The file is
-optional.
+| Key | What it does |
+| --- | --- |
+| `rules` | A list of business rules. The fields are explained on the [rules file format](../rules.md) page. |
+| `preview.sample_data` | Where sample data lives, relative to the project folder. Same as `--sample-data`, but set once for everyone. |
+| `preview.dialect` | SQL dialect of the project. Same as `--dialect`. |
+
+Other keys in `preview:` are ignored, and so is a `preview:` section that is not a
+mapping. The file is optional.
 
 ## Files OpenPipeline reads and writes
 

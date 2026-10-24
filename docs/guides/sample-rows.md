@@ -22,6 +22,10 @@ Then open a model in the UI and expand **Sample rows**, or run:
 openpipeline sample customers
 ```
 
+![Sample rows for the customers model](../assets/sample-rows.png)
+
+Without DuckDB the section is still there, and tells you how to install it.
+
 Agents can call the `sample_rows` tool to sanity-check their own logic. See
 [Working with AI agents](ai-agents.md).
 
@@ -59,6 +63,22 @@ which file to add.
 
 Set `--dialect` or `OPENPIPELINE_DIALECT` (for example `snowflake` or
 `bigquery`) so the SQL is read in your warehouse's dialect.
+
+Rows come back in whatever order DuckDB produces them, so two runs of a model
+without an `order by` can show them in a different order.
+
+## Set it once for the team
+
+Instead of passing flags, add a `preview:` section to `openpipeline.yml`:
+
+```yaml
+preview:
+  sample_data: sample_data   # a folder or a .duckdb file, relative to the project
+  dialect: snowflake
+```
+
+A flag wins over an environment variable, and an environment variable wins over
+the file.
 
 ## What cannot be previewed
 
