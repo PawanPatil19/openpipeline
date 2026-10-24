@@ -396,17 +396,17 @@ button.primary {
 }
 
 /* Review mode */
-.pnode--added {
+.pnode.pnode--added {
   border-color: #1f9d55;
   border-left-color: #1f9d55;
   background: color-mix(in srgb, #1f9d55 14%, var(--surface));
 }
-.pnode--modified {
+.pnode.pnode--modified {
   border-color: #d98e04;
   border-left-color: #d98e04;
   background: color-mix(in srgb, #d98e04 14%, var(--surface));
 }
-.pnode--removed {
+.pnode.pnode--removed {
   border: 2px dashed #d64545;
   background: transparent;
   opacity: 0.7;

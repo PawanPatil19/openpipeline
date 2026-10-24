@@ -48,3 +48,10 @@ path = "src/openpipeline/__init__.py"
 packages = ["src/openpipeline"]
 # The web UI is built into src/openpipeline/static before packaging (see Makefile).
 artifacts = ["src/openpipeline/static/**"]
+
+# The example project ships inside the package so `openpipeline demo` works after pip install.
+# `uv build` makes the wheel from the sdist, and the sdist cannot see ../../examples, so the
+# sdist copies the example into the package folder and the wheel picks it up from there.
+# A wheel built straight from the repo falls back to examples/jaffle_shop (see demo.py).
+[tool.hatch.build.targets.sdist.force-include]
+"../../examples/jaffle_shop" = "src/openpipeline/_example"

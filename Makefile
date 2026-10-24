@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 PROJECT ?= examples/jaffle_shop
 
-.PHONY: help install dev dev-api dev-web lint format typecheck test build docker up down clean
+.PHONY: help install dev dev-api dev-web lint format typecheck test build docker up down docs docs-build demo clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -47,6 +47,15 @@ build: ## Build the web UI into the Python package, then build wheels
 	uv build --package openpipeline-core --out-dir dist
 	uv build --package openpipeline --out-dir dist
 
+docs: ## Serve the docs site with live reload on :8000
+	uv run --group docs mkdocs serve
+
+docs-build: ## Build the docs site into ./site (fails on any warning)
+	uv run --group docs mkdocs build --strict
+
+demo: ## Try the example project with a proposal waiting for review
+	uv run openpipeline demo
+
 docker: ## Build the Docker image
 	docker build -t openpipeline:dev .
 
@@ -57,4 +66,4 @@ down: ## Stop Docker Compose
 	docker compose down
 
 clean: ## Remove build output and caches
-	rm -rf dist apps/server/src/openpipeline/static .pytest_cache .mypy_cache .ruff_cache .coverage
+	rm -rf dist site apps/server/src/openpipeline/static .pytest_cache .mypy_cache .ruff_cache .coverage

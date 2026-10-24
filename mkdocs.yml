@@ -1,0 +1,66 @@
+site_name: OpenPipeline
+site_description: See what your dbt project does, in plain English. Review every change before it lands.
+site_url: https://pawanpatil19.github.io/openpipeline/
+repo_url: https://github.com/PawanPatil19/openpipeline
+repo_name: PawanPatil19/openpipeline
+edit_uri: edit/main/docs/
+strict: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: false
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Guides:
+      - Reading the graph and stories: guides/graph-and-stories.md
+      - Editing descriptions: guides/editing-descriptions.md
+      - AI explanations: guides/ai-explanations.md
+      - Sample rows: guides/sample-rows.md
+      - Search and column lineage: guides/search-and-lineage.md
+      - Business rules: guides/business-rules.md
+      - PR summaries: guides/pr-summaries.md
+      - Working with AI agents: guides/ai-agents.md
+  - Reference:
+      - Command line: reference/cli.md
+      - HTTP API: reference/api.md
+      - Configuration: reference/configuration.md
+      - Architecture: architecture.md
+      - Rules file format: rules.md
+      - Releasing: releasing.md
+  - FAQ and troubleshooting: faq.md

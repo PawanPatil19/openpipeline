@@ -30,6 +30,8 @@ jobs:
       - run: make build
       - name: Check the UI is inside the wheel
         run: unzip -l dist/openpipeline-[0-9]*.whl | grep -q 'openpipeline/static/index.html'
+      - name: Check the demo example is inside the wheel
+        run: unzip -l dist/openpipeline-[0-9]*.whl | grep -q 'openpipeline/_example/dbt_project.yml'
       - uses: actions/upload-artifact@v7
         with:
           name: dist

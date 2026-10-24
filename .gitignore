@@ -32,3 +32,4 @@ logs/
 .vscode/*
 !.vscode/extensions.json
 .env
+site/

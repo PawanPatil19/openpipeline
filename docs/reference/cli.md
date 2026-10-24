@@ -1,0 +1,139 @@
+# Command line
+
+```bash
+openpipeline [COMMAND] [OPTIONS]
+```
+
+Run `openpipeline COMMAND --help` for the same information in your terminal.
+
+Every command that reads a project takes an optional `PROJECT` argument: the
+folder that holds `dbt_project.yml`. It defaults to the current folder, or to
+`OPENPIPELINE_PROJECT_DIR` if that is set.
+
+Exit codes: `0` on success, `1` when a model or column you named does not exist or
+a preview fails, and `2` when the project cannot be loaded.
+
+## openpipeline demo
+
+Try everything with no setup.
+
+```bash
+openpipeline demo [--dir PATH] [--host HOST] [--port PORT] [--serve | --no-serve]
+```
+
+Copies the bundled jaffle_shop example, files one realistic pending proposal from
+an imaginary agent (it adds a `revenue_by_month` model and touches two business
+rules, with a rationale), then starts the server.
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `--dir PATH` | a temporary folder | Copy the example here instead. The folder must be empty or not exist yet. |
+| `--host` | `127.0.0.1` | Address to listen on. Also `OPENPIPELINE_HOST`. |
+| `--port` | `8484` | Port to listen on. Also `OPENPIPELINE_PORT`. |
+| `--no-serve` | off | Only prepare the folder and print its path. |
+
+## openpipeline serve
+
+Start the web UI and the HTTP API on one port.
+
+```bash
+openpipeline serve [PROJECT] [--host HOST] [--port PORT] [--reload]
+                   [--sample-data PATH] [--dialect NAME]
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `--host` | `127.0.0.1` | Address to listen on. Also `OPENPIPELINE_HOST`. Use `0.0.0.0` in a container. |
+| `--port` | `8484` | Port to listen on. Also `OPENPIPELINE_PORT`. |
+| `--reload` | off | Restart on code changes. For developing OpenPipeline itself. |
+| `--sample-data PATH` | `sample_data/` | Folder of sample CSV or Parquet files, or a `.duckdb` file, for [sample rows](../guides/sample-rows.md). Also `OPENPIPELINE_SAMPLE_DATA`. |
+| `--dialect NAME` | none | SQL dialect of the project, such as `snowflake`. Also `OPENPIPELINE_DIALECT`. |
+
+## openpipeline mcp
+
+Run the [MCP server](../guides/ai-agents.md) for AI agents.
+
+```bash
+openpipeline mcp [PROJECT] [--transport stdio|streamable-http]
+                 [--host HOST] [--port PORT] [--sample-data PATH] [--dialect NAME]
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `--transport` | `stdio` | `stdio` for local agents, `streamable-http` to run as a service. |
+| `--host` | `127.0.0.1` | Address for the HTTP transport. Also `OPENPIPELINE_HOST`. |
+| `--port` | `8485` | Port for the HTTP transport. Also `OPENPIPELINE_MCP_PORT`. |
+| `--sample-data`, `--dialect` | | Same as for `serve`. |
+
+## openpipeline explain
+
+Explain one model in plain English.
+
+```bash
+openpipeline explain MODEL [PROJECT] [--json] [--ai]
+```
+
+| Option | What it does |
+| --- | --- |
+| `--json` | Print JSON instead of text. |
+| `--ai` | Also ask Claude to explain it. Needs `openpipeline[ai]` and an API key. See [AI explanations](../guides/ai-explanations.md). |
+
+## openpipeline graph
+
+Print the model graph as JSON.
+
+```bash
+openpipeline graph [PROJECT]
+```
+
+## openpipeline lineage
+
+Show where a column comes from and where it is used. See
+[Search and column lineage](../guides/search-and-lineage.md).
+
+```bash
+openpipeline lineage MODEL COLUMN [PROJECT] [--json]
+```
+
+## openpipeline sample
+
+Show a few rows of a model, run on local sample data with DuckDB. Needs
+`openpipeline[preview]`. See [Sample rows](../guides/sample-rows.md).
+
+```bash
+openpipeline sample MODEL [PROJECT] [--limit N] [--sample-data PATH] [--dialect NAME]
+```
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `--limit N` | `10` | Rows to show, from 1 to 200. |
+| `--sample-data PATH` | `sample_data/` | Where the sample data is. |
+| `--dialect NAME` | none | SQL dialect of the project. |
+
+## openpipeline rules
+
+List [business rules](../guides/business-rules.md), grouped by owner.
+
+```bash
+openpipeline rules [PROJECT] [--json]
+```
+
+## openpipeline review
+
+Summarise what changed between two versions of a project, as Markdown for a pull
+request comment. See [PR summaries](../guides/pr-summaries.md).
+
+```bash
+openpipeline review BASE HEAD [-o FILE] [--ai]
+```
+
+| Option | What it does |
+| --- | --- |
+| `BASE` | The project before the change. |
+| `HEAD` | The project after the change. |
+| `-o`, `--output FILE` | Write to a file instead of printing. |
+| `--ai` | Add an "In plain words" paragraph written by Claude. |
+
+## openpipeline version
+
+Print the installed version.

@@ -1,7 +1,7 @@
 # Releasing
 
 Releases are cut by pushing a version tag. The
-[release workflow](../.github/workflows/release.yml) then:
+[release workflow](https://github.com/PawanPatil19/openpipeline/blob/main/.github/workflows/release.yml) then:
 
 1. Checks the tag matches the version in every package.
 2. Builds the web UI into the Python package and builds both wheels.
@@ -37,4 +37,8 @@ These need a repository admin and only have to be done once.
   release a final manual approval.
 - **GHCR visibility.** After the first image is pushed, make the package public
   under the repository's Packages settings.
+- **GitHub Pages.** The docs site is deployed by the docs workflow. In the
+  repository, go to Settings → Pages → Source and choose **GitHub Actions**. The
+  first push to `main` after that publishes the site at
+  https://pawanpatil19.github.io/openpipeline/.
 - **Branch protection.** Require the `All checks passed` status on `main`.
