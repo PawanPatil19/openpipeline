@@ -13,7 +13,7 @@ inputs:
     description: Branch or commit to compare against. Defaults to the pull request's base branch.
     default: ""
   comment:
-    description: Post (or update) a comment on the pull request. Needs `pull-requests: write`.
+    description: "Post (or update) a comment on the pull request. Needs `pull-requests: write`."
     default: "true"
   github-token:
     description: Token used to post the comment.
