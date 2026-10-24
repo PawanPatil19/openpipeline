@@ -91,7 +91,13 @@ export interface Impact {
   downstream: string[];
 }
 
-export type ProposalStatus = "pending" | "accepted" | "rejected";
+export type ProposalStatus = "pending" | "accepted" | "rejected" | "superseded";
+
+export interface Comment {
+  author: string;
+  text: string;
+  created_at: string;
+}
 
 export interface Proposal {
   id: string;
@@ -101,12 +107,56 @@ export interface Proposal {
   created_at: string;
   status: ProposalStatus;
   changes: { path: string; content: string }[];
+  base?: Record<string, string | null> | null;
+  comments?: Comment[];
+  revises?: string | null;
+  superseded_by?: string | null;
+}
+
+export type NodeStatus = "added" | "modified" | "removed" | "affected" | "unchanged";
+
+export interface ReviewNode extends GraphNode {
+  status: NodeStatus;
+}
+
+export interface ReviewGraph {
+  nodes: ReviewNode[];
+  edges: GraphEdge[];
+}
+
+export interface FileDiff {
+  path: string;
+  change: "added" | "modified" | "deleted";
+  diff: string;
+  before: string;
+  after: string;
+}
+
+export interface ModelChange {
+  name: string;
+  unique_id: string;
+  change: "added" | "removed" | "modified";
+  details: string[];
+  downstream: string[];
+  owners: string[];
+}
+
+export interface ChangePreview {
+  diff: { changes: ModelChange[] };
+  files: FileDiff[];
+  node_statuses: Record<string, NodeStatus>;
+  graph: ReviewGraph;
+  new_warnings: string[];
+  parse_errors: { model: string; message: string }[];
+  summary: string[];
 }
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** Files that changed on disk since the proposal was made, for a 409 conflict. */
+    public changedFiles: string[] = [],
   ) {
     super(message);
   }
@@ -119,7 +169,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body.detail ?? res.statusText);
+    const detail = body.detail;
+    if (detail && typeof detail === "object") {
+      throw new ApiError(res.status, detail.message ?? res.statusText, detail.changed_files ?? []);
+    }
+    throw new ApiError(res.status, detail ?? res.statusText);
   }
   return res.json() as Promise<T>;
 }
@@ -143,9 +197,19 @@ export const api = {
   story: (name: string) => request<ModelStory>(`/api/models/${enc(name)}/story`),
   impact: (name: string) => request<Impact>(`/api/models/${enc(name)}/impact`),
   proposals: () => request<Proposal[]>("/api/proposals"),
-  decide: (id: string, status: Exclude<ProposalStatus, "pending">) =>
+  decide: (
+    id: string,
+    status: "accepted" | "rejected",
+    options: { reason?: string; force?: boolean } = {},
+  ) =>
     request<Proposal>(`/api/proposals/${enc(id)}`, {
       method: "POST",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...options }),
     }),
+  comment: (id: string, text: string) =>
+    request<Proposal>(`/api/proposals/${enc(id)}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
+  preview: (id: string) => request<ChangePreview>(`/api/proposals/${enc(id)}/preview`),
 };

@@ -74,17 +74,34 @@ comment.
 
 ## Data flow for a proposal
 
-1. An agent calls `propose_change` with full new file contents.
-2. `ProposalStore` checks every path stays inside the project and away from
-   `.git` and `.openpipeline`, then saves the proposal as pending.
-3. The UI lists it under **Proposals** with the file contents.
-4. A person accepts (files are written) or rejects it. `ProjectState` notices
-   the new files and the graph updates.
+1. An agent calls `preview_change` with full new file contents. The core's
+   `preview_changes` copies the project to a temporary folder (skipping `.git`,
+   `target`, and similar), applies the files there, loads both versions from
+   their files, and returns a `ChangePreview`: file diffs, a status for every
+   node (added, modified, removed, affected downstream), the merged graph with
+   removed nodes kept as ghosts, new load warnings, and SQL that fails to parse.
+   Nothing is saved. The copy costs time and disk that grow with project size,
+   but it is exact and needs no dbt install.
+2. The agent calls `propose_change`. `ProposalStore` checks every path stays
+   inside the project and away from `.git` and `.openpipeline`, records a
+   SHA-256 fingerprint of each file as it is now, and saves the proposal as
+   pending. If it sets `revises`, the earlier pending proposal becomes
+   `superseded`.
+3. The UI lists it under **Proposals**. It calls `GET /api/proposals/{id}/preview`
+   to show a summary and diffs, and **Show on graph** draws the after-graph with
+   color-coded nodes. The preview always runs against the files on disk now, so
+   for an accepted proposal it is stale and shows little.
+4. A person comments, accepts, or rejects with an optional reason (saved as a
+   comment). Accepting first compares each file with its saved fingerprint. If
+   any changed, the API answers 409 with the list of files, and the UI offers
+   **Accept anyway**, which resends with `force: true`.
+5. Accepting writes the files. `ProjectState` notices them and the graph updates.
+6. The agent polls `get_proposal` for the status and comments, and answers
+   feedback with a new proposal that has `revises` set.
 
 ## What comes next
 
 - Column-level lineage using sqlglot's lineage module.
-- Showing a proposal's effect on the graph before accepting it.
 - A visual editing canvas that writes plain dbt SQL.
 - Authentication for shared deployments.
 

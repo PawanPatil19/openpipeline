@@ -3,19 +3,28 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from openpipeline import __version__
 from openpipeline.ai import AIClient, AIError, AIExplanation, AIService, AIStatus, default_client
 from openpipeline.files import write_file
-from openpipeline.proposals import Proposal, ProposalStore, Status
+from openpipeline.proposals import Proposal, ProposalStore, StaleProposalError, Status
 from openpipeline.state import ProjectState
-from openpipeline_core import DocsUpdate, ModelStory, Node, NodeKind, explain_model, update_docs
+from openpipeline_core import (
+    ChangePreview,
+    DocsUpdate,
+    ModelStory,
+    Node,
+    NodeKind,
+    explain_model,
+    preview_changes,
+    update_docs,
+)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -36,7 +45,16 @@ class Impact(BaseModel):
 
 
 class StatusUpdate(BaseModel):
-    status: Status
+    status: Literal["accepted", "rejected"]
+    reason: str | None = None
+    """Why the proposal was rejected. Saved as a comment."""
+    force: bool = False
+    """Accept even if files changed since the proposal was made."""
+
+
+class CommentCreate(BaseModel):
+    text: str = Field(min_length=1)
+    author: str = "reviewer"
 
 
 def create_app(
@@ -131,11 +149,40 @@ def create_app(
     @app.post("/api/proposals/{proposal_id}")
     def update_proposal(proposal_id: str, body: StatusUpdate) -> Proposal:
         try:
-            return proposals.set_status(proposal_id, body.status)
+            return proposals.set_status(
+                proposal_id, body.status, reason=body.reason, force=body.force
+            )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="Proposal not found") from exc
+        except StaleProposalError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail={"code": "stale", "message": str(exc), "changed_files": exc.files},
+            ) from exc
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @app.post("/api/proposals/{proposal_id}/comments")
+    def comment_on_proposal(proposal_id: str, body: CommentCreate) -> Proposal:
+        try:
+            return proposals.add_comment(proposal_id, body.author, body.text)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Proposal not found") from exc
+
+    @app.get("/api/proposals/{proposal_id}/preview")
+    def preview_proposal(proposal_id: str) -> ChangePreview:
+        """What the proposal would do to the project as it is on disk now.
+
+        For an accepted proposal the files are already written, so the preview shows
+        little or nothing. It is only meaningful while a proposal is pending.
+        """
+        proposal = proposals.get(proposal_id)
+        if proposal is None:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        try:
+            return preview_changes(state.root, [(c.path, c.content) for c in proposal.changes])
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     if serve_ui and (STATIC_DIR / "index.html").is_file():
         app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")

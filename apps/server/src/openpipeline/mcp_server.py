@@ -15,7 +15,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from openpipeline import __version__
 from openpipeline.proposals import FileChange, Proposal, ProposalStore
 from openpipeline.state import ProjectState
-from openpipeline_core import DocsUpdate, explain_model, update_docs
+from openpipeline_core import DocsUpdate, explain_model, preview_changes, update_docs
 
 
 def create_mcp_server(project_dir: str | Path) -> MCPServer:
@@ -24,10 +24,17 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
     server = MCPServer(
         "openpipeline",
         instructions=(
-            "Read a dbt project and propose changes to it. Use list_models and "
-            "explain to understand the project, impact_of before changing a model, "
-            "and propose_change (or propose_docs for descriptions) to suggest edits. "
-            "Proposals are reviewed by a person; you cannot change files directly."
+            "Read a dbt project and propose changes to it. You cannot change files "
+            "directly: a person reviews every proposal on the graph and accepts or "
+            "rejects it. Work in this loop. 1) explain (and list_models, get_model) to "
+            "understand the models you will touch (propose_docs files a description-only change). 2) impact_of to see what depends on "
+            "them. 3) preview_change with the full new file contents to check the effect "
+            "without saving anything, and fix new warnings and SQL errors. "
+            "4) propose_change with the same files, a clear title, and a rationale in plain "
+            "English. 5) Poll get_proposal to see whether it was accepted or rejected, and "
+            "to read the person's comments. 6) If they ask for changes, call "
+            "propose_change again with revises set to the old proposal id; the old one is "
+            "marked superseded."
         ),
         version=__version__,
     )
@@ -66,14 +73,47 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
         }
 
     @server.tool()
+    def preview_change(files: list[dict[str, str]]) -> dict[str, Any]:
+        """Dry run: see what a change would do, without saving a proposal.
+
+        ``files`` is a list of ``{"path": ..., "content": ...}`` with the full new
+        content of each file. Empty content deletes the file. Returns a plain-English
+        summary, models added, changed, and removed, models affected downstream, new
+        warnings (such as a ref to a missing model), and SQL that could not be read.
+        Nothing is written. Use it to check your work before propose_change.
+        """
+        changes = [FileChange.model_validate(f) for f in files]
+        try:
+            store.check_paths([c.path for c in changes])
+            preview = preview_changes(state.root, [(c.path, c.content) for c in changes])
+        except ValueError as exc:
+            raise ToolError(str(exc)) from exc
+        return {
+            "summary": preview.summary,
+            "added": preview.names_with_status("added"),
+            "modified": preview.names_with_status("modified"),
+            "removed": preview.names_with_status("removed"),
+            "affected": preview.names_with_status("affected"),
+            "new_warnings": preview.new_warnings,
+            "parse_errors": [e.model_dump() for e in preview.parse_errors],
+            "details": [c.model_dump(mode="json") for c in preview.diff.changes],
+            "ok": not preview.new_warnings and not preview.parse_errors,
+        }
+
+    @server.tool()
     def propose_change(
-        title: str, rationale: str, files: list[dict[str, str]], author: str = "agent"
+        title: str,
+        rationale: str,
+        files: list[dict[str, str]],
+        author: str = "agent",
+        revises: str | None = None,
     ) -> dict[str, Any]:
         """Propose edits to the dbt project for a person to review.
 
         ``files`` is a list of ``{"path": ..., "content": ...}`` with the full new
         content of each file, relative to the project root. Empty content deletes
-        the file. Returns the proposal id.
+        the file. Set ``revises`` to the id of an earlier proposal to replace it after
+        feedback; that proposal is marked superseded. Returns the proposal id.
         """
         proposal = store.create(
             Proposal(
@@ -81,6 +121,7 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
                 rationale=rationale,
                 author=author,
                 changes=[FileChange.model_validate(f) for f in files],
+                revises=revises,
             )
         )
         return {"id": proposal.id, "status": proposal.status}
@@ -118,8 +159,28 @@ def create_mcp_server(project_dir: str | Path) -> MCPServer:
         return {"id": proposal.id, "status": proposal.status, "path": edit.path}
 
     @server.tool()
+    def get_proposal(id: str) -> dict[str, Any]:
+        """Return a proposal's status and the comments people left on it.
+
+        Poll this after propose_change. Status is pending, accepted, rejected, or
+        superseded. Comments include the reason for a rejection.
+        """
+        proposal = store.get(id)
+        if proposal is None:
+            raise ToolError(f"No proposal with id {id!r}")
+        return {
+            "id": proposal.id,
+            "title": proposal.title,
+            "status": proposal.status,
+            "revises": proposal.revises,
+            "superseded_by": proposal.superseded_by,
+            "files": [c.path for c in proposal.changes],
+            "comments": [c.model_dump(mode="json") for c in proposal.comments],
+        }
+
+    @server.tool()
     def list_proposals() -> list[dict[str, Any]]:
-        """List proposals and whether each is pending, accepted, or rejected."""
+        """List proposals and whether each is pending, accepted, rejected, or superseded."""
         return [
             {"id": p.id, "title": p.title, "status": p.status, "author": p.author}
             for p in store.list()

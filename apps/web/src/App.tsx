@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { GraphView } from "./components/GraphView";
 import { ProposalsPanel } from "./components/ProposalsPanel";
+import { ReviewLegend } from "./components/ReviewLegend";
 import { StoryPanel } from "./components/StoryPanel";
 import { api, type GraphNode } from "./lib/api";
 
@@ -13,6 +14,15 @@ export function App() {
   const proposals = useQuery({ queryKey: ["proposals"], queryFn: api.proposals });
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [tab, setTab] = useState<Tab>("model");
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const preview = useQuery({
+    queryKey: ["preview", reviewId],
+    queryFn: () => api.preview(reviewId as string),
+    enabled: reviewId !== null,
+  });
+  const reviewing = reviewId !== null && preview.data ? preview.data : null;
+  const reviewTitle = proposals.data?.find((p) => p.id === reviewId)?.title ?? "proposal";
+  const shownGraph = reviewing ? reviewing.graph : graph.data;
 
   const pendingCount = proposals.data?.filter((p) => p.status === "pending").length ?? 0;
 
@@ -52,9 +62,10 @@ export function App() {
           {graph.isError && (
             <p className="center error">Could not load the project: {graph.error.message}</p>
           )}
-          {graph.data && (
+          {shownGraph && (
             <GraphView
-              graph={graph.data}
+              graph={shownGraph}
+              statuses={reviewing?.node_statuses}
               selectedId={selected?.id ?? null}
               onSelect={(n) => {
                 setSelected(n);
@@ -62,10 +73,25 @@ export function App() {
               }}
             />
           )}
+          {reviewing && <ReviewLegend title={reviewTitle} onExit={() => setReviewId(null)} />}
         </div>
         <aside className="side">
           {tab === "proposals" ? (
-            <ProposalsPanel />
+            <ProposalsPanel
+              reviewingId={reviewId}
+              onReview={(id) => {
+                setReviewId(id);
+                setSelected(null);
+              }}
+            />
+          ) : selected && reviewing?.node_statuses[selected.id] === "added" ? (
+            <section className="panel" aria-label={`About ${selected.name}`}>
+              <h2>{selected.name}</h2>
+              <p className="muted">
+                This model is new in the proposal, so there is no story yet. Accept the proposal to
+                read it here. Its SQL is in the diff under Proposals.
+              </p>
+            </section>
           ) : selected ? (
             <StoryPanel key={selected.id} node={selected} />
           ) : (

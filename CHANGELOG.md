@@ -22,3 +22,11 @@ All notable changes are listed here. The format follows
   inputs on the PR summary action. Answers are cached in `.openpipeline/cache`.
 - MCP tool `propose_docs` for agents to propose description changes.
 - `PUT /api/models/{name}/docs`, `GET /api/ai`, and `POST /api/models/{name}/ai-explanation`.
+- Review of agent proposals: a plain-English summary, readable diffs, and a
+  "Show on graph" mode that colors new, changed, removed, and affected models.
+- Comments on proposals, a reason when rejecting, and a "superseded" status when
+  an agent revises a proposal.
+- Accepting a proposal now stops with a clear message if files changed since it
+  was made. "Accept anyway" overrides it.
+- MCP tools `preview_change` (dry run) and `get_proposal`, and a `revises` option
+  on `propose_change`, so agents can check their work and answer feedback.
