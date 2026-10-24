@@ -72,8 +72,30 @@ claude mcp add openpipeline -- openpipeline mcp /path/to/dbt/project
 ```
 
 The agent gets these tools: `list_models`, `get_model`, `explain`, `impact_of`,
-`propose_change`, `propose_docs`, and `list_proposals`. It can look at everything,
-but it can only propose edits. You accept or reject them in the **Proposals** tab.
+`preview_change`, `propose_change`, `propose_docs`, `get_proposal`, and
+`list_proposals`. It can look at everything, but it can only propose edits.
+Nothing is written until you accept.
+
+The review loop works like this:
+
+1. The agent reads the project with `explain` and checks what depends on a model
+   with `impact_of`.
+2. It calls `preview_change` with the new file contents. This is a dry run that
+   reports new warnings and the models that would be affected, so it can fix
+   mistakes before you see them.
+3. It calls `propose_change`. The proposal appears in the **Proposals** tab with a
+   plain-English summary and a readable diff for each file.
+4. Press **Show on graph** to see the result: new models in green, changed models
+   in amber, removed models as red dashed ghosts, and models whose results may
+   change with an outline. Click any box to read its story.
+5. Accept, or reject with a reason. You can also leave comments. The agent reads
+   them with `get_proposal`.
+6. If you asked for changes, the agent calls `propose_change` again with
+   `revises` set to the old proposal. The old one is marked superseded.
+
+If someone edits a file after a proposal was made, accepting shows which files
+changed. You can then choose **Accept anyway**.
+
 `propose_docs` suggests a new description for a model or its columns.
 
 ## Edit descriptions

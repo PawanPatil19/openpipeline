@@ -10,16 +10,20 @@ import {
   ReactFlow,
 } from "@xyflow/react";
 import { useMemo } from "react";
-import type { Graph, GraphNode } from "../lib/api";
+import type { Graph, GraphNode, NodeStatus } from "../lib/api";
 import { layoutGraph, lineage, NODE_HEIGHT, NODE_WIDTH } from "../lib/layout";
 
-type PipelineNode = Node<{ node: GraphNode; dimmed: boolean; selected: boolean }, "pipeline">;
+type PipelineNode = Node<
+  { node: GraphNode; dimmed: boolean; selected: boolean; status?: NodeStatus },
+  "pipeline"
+>;
 
 function PipelineNodeView({ data }: NodeProps<PipelineNode>) {
-  const { node, dimmed, selected } = data;
+  const { node, dimmed, selected, status } = data;
   return (
     <div
-      className={`pnode pnode--${node.kind}${dimmed ? " is-dimmed" : ""}${selected ? " is-selected" : ""}`}
+      className={`pnode pnode--${node.kind}${dimmed ? " is-dimmed" : ""}${selected ? " is-selected" : ""}${status ? ` pnode--${status}` : ""}`}
+      data-status={status}
       style={{ width: NODE_WIDTH, height: NODE_HEIGHT }}
       title={node.description || node.name}
     >
@@ -40,13 +44,21 @@ const KIND_COLORS: Record<GraphNode["kind"], string> = {
   snapshot: "#8b5cf6",
 };
 
+const STATUS_COLORS: Partial<Record<NodeStatus, string>> = {
+  added: "#1f9d55",
+  modified: "#d98e04",
+  removed: "#d64545",
+};
+
 interface Props {
   graph: Graph;
   selectedId: string | null;
   onSelect: (node: GraphNode | null) => void;
+  /** Review mode: colour nodes by how a proposal would change them, keyed by node id. */
+  statuses?: Record<string, NodeStatus>;
 }
 
-export function GraphView({ graph, selectedId, onSelect }: Props) {
+export function GraphView({ graph, selectedId, onSelect, statuses }: Props) {
   const positions = useMemo(() => layoutGraph(graph), [graph]);
   const highlighted = useMemo(
     () => (selectedId ? lineage(graph, selectedId) : null),
@@ -65,6 +77,7 @@ export function GraphView({ graph, selectedId, onSelect }: Props) {
         node: n,
         dimmed: highlighted !== null && !highlighted.has(n.id),
         selected: n.id === selectedId,
+        status: statuses?.[n.id],
       },
     };
   });
@@ -76,7 +89,15 @@ export function GraphView({ graph, selectedId, onSelect }: Props) {
       source: e.source,
       target: e.target,
       animated: Boolean(lit && selectedId),
-      className: highlighted && !lit ? "is-dimmed" : undefined,
+      className:
+        [
+          highlighted && !lit ? "is-dimmed" : "",
+          statuses?.[e.source] === "removed" || statuses?.[e.target] === "removed"
+            ? "is-ghost"
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined,
     };
   });
 
@@ -98,7 +119,10 @@ export function GraphView({ graph, selectedId, onSelect }: Props) {
       <MiniMap
         pannable
         zoomable
-        nodeColor={(n) => KIND_COLORS[(n as PipelineNode).data.node.kind]}
+        nodeColor={(n) => {
+          const d = (n as PipelineNode).data;
+          return (d.status && STATUS_COLORS[d.status]) || KIND_COLORS[d.node.kind];
+        }}
       />
     </ReactFlow>
   );

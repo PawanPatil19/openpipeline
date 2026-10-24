@@ -28,7 +28,9 @@ def test_tools_are_registered(project_dir: Path) -> None:
         "get_model",
         "explain",
         "impact_of",
+        "preview_change",
         "propose_change",
+        "get_proposal",
         "propose_docs",
         "list_proposals",
     }
