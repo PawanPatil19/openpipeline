@@ -18,7 +18,8 @@ export PATH="$HOME/.local/bin:$PATH"
 # --- tools ---------------------------------------------------------------------------
 if ! command -v uv >/dev/null 2>&1; then
   echo "==> Installing uv"
-  python3 -m pip install --user --quiet uv
+  python3 -m pip install --user --quiet uv \
+    || curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
 if ! command -v pnpm >/dev/null 2>&1; then
