@@ -8,7 +8,7 @@ requires-python = ">=3.11"
 authors = [{ name = "OpenPipeline contributors" }]
 keywords = ["dbt", "data-engineering", "lineage", "mcp", "data-catalog"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 3 - Alpha",
     "Environment :: Web Environment",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Database",
 ]
 dependencies = [
-    "openpipeline-core==1.0.0",
+    "openpipeline-core==0.1.0",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "typer>=0.15",
@@ -31,6 +31,8 @@ openpipeline = "openpipeline.cli:app"
 [project.urls]
 Homepage = "https://github.com/PawanPatil19/openpipeline"
 Issues = "https://github.com/PawanPatil19/openpipeline/issues"
+Documentation = "https://openpipeline.vercel.app/docs/"
+Changelog = "https://github.com/PawanPatil19/openpipeline/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 ai = [

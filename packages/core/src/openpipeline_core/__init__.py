@@ -20,7 +20,7 @@ from openpipeline_core.search import SearchHit, search_project
 from openpipeline_core.sql_source import ReadableSQL, readable_sql
 from openpipeline_core.story import ColumnStory, ModelStory, explain_model
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 
 __all__ = [
     "ChangePreview",

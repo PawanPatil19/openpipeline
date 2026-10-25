@@ -58,6 +58,6 @@ pip, Docker, and Compose.
 | Get a summary on every pull request | [PR summaries](guides/pr-summaries.md) |
 | Let an agent suggest changes safely | [Working with AI agents](guides/ai-agents.md) |
 
-!!! note "Version 1.0"
-    If something is confusing or broken, please
+!!! note "Early release (0.x)"
+    OpenPipeline is young, and names and options may change before 1.0. If something is confusing or broken, please
     [open an issue](https://github.com/PawanPatil19/openpipeline/issues).
