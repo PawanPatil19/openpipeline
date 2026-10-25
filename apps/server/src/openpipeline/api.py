@@ -37,6 +37,7 @@ class ProjectInfo(BaseModel):
     name: str
     root: str
     loaded_from: str
+    adapter: str | None = None
     model_count: int
     source_count: int
     warnings: list[str]
@@ -97,6 +98,7 @@ def create_app(
             name=p.name,
             root=p.root,
             loaded_from=p.loaded_from,
+            adapter=p.adapter,
             model_count=len(p.models()),
             source_count=sum(1 for n in p.nodes.values() if n.kind.value == "source"),
             warnings=[*p.warnings, *state.rules().warnings],
@@ -145,7 +147,7 @@ def create_app(
     @app.get("/api/models/{name}/story")
     def story(name: str) -> ModelStory:
         node = node_or_404(name)
-        return explain_model(state.project(), node.unique_id)
+        return explain_model(state.project(), node.unique_id, lineage=state.lineage())
 
     @app.get("/api/models/{name}/impact")
     def impact(name: str) -> Impact:

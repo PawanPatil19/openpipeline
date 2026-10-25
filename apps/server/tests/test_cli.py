@@ -22,6 +22,8 @@ def test_explain(project_dir: Path) -> None:
     result = runner.invoke(app, ["explain", "customers", str(project_dir)])
     assert result.exit_code == 0
     assert "one row per customer_id" in result.stdout
+    assert "lifetime_value: the total of amount" in result.stdout
+    assert "first_name: passed through from stg_customers" in result.stdout
 
     as_json = runner.invoke(app, ["explain", "customers", str(project_dir), "--json"])
     assert json.loads(as_json.stdout)["model"] == "customers"

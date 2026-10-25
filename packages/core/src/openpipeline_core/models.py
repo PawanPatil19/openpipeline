@@ -9,7 +9,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 class NodeKind(StrEnum):
@@ -37,6 +37,10 @@ class Node(BaseModel):
     path: str | None = None
     """File path relative to the project root, when the node comes from a file."""
     raw_sql: str = ""
+    compiled_sql: str = ""
+    """SQL after dbt resolved macros and refs. Only set when read from a manifest."""
+    relation_name: str | None = None
+    """Physical table name in the warehouse, e.g. ``"dev"."main"."stg_orders"``."""
     materialized: str | None = None
     depends_on: list[str] = Field(default_factory=list)
     """``unique_id`` of every node this one reads from."""
@@ -56,8 +60,16 @@ class Project(BaseModel):
     loaded_from: str
     """How the project was read: ``"manifest"`` or ``"files"``."""
     nodes: dict[str, Node] = Field(default_factory=dict)
+    adapter: str | None = None
+    """dbt adapter (``duckdb``, ``snowflake``, ...) from the manifest, when known."""
     warnings: list[str] = Field(default_factory=list)
     """Problems found while loading, such as a ``ref()`` to a missing model."""
+
+    _scratch: dict[str, Any] = PrivateAttr(default_factory=dict)
+
+    def scratch(self) -> dict[str, Any]:
+        """A per-instance cache for derived data (parsed SQL). Never serialised."""
+        return self._scratch
 
     def get(self, name_or_id: str) -> Node | None:
         """Find a node by ``unique_id`` or, failing that, by short name."""

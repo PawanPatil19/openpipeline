@@ -162,6 +162,11 @@ def explain(
     typer.echo(story.summary)
     for i, step in enumerate(story.steps, 1):
         typer.echo(f"  {i}. {step}")
+    if story.columns:
+        typer.echo()
+        typer.secho("Columns", bold=True)
+        for column in story.columns:
+            typer.echo(f"  {column.name}: {column.how}")
     if explanation is not None:
         typer.echo()
         typer.secho(f"In plain words (written by {explanation.ai_model})", bold=True)

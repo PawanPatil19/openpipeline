@@ -77,12 +77,15 @@ one it used ("read from manifest" or "read from files").
 | | `target/manifest.json` | Plain files |
 | --- | --- | --- |
 | When it is used | Whenever `target/manifest.json` exists | When there is no manifest |
-| Jinja and macros | Already resolved by dbt | Only `ref()`, `source()`, and `config()` are understood |
-| Setup needed | Run `dbt parse` (no warehouse needed) | None |
+| Jinja and macros | Already resolved by dbt | `ref()`, `source()`, and `config()` are resolved; macro calls are shown by name; only the first branch of an `if` is read |
+| Stories | Written from dbt's compiled SQL when the manifest has it | Written from the file with Jinja simplified |
+| Setup needed | Run `dbt compile` | None |
 | Best for | Projects that use macros, packages, or `var()` | A quick look, or a repo without dbt installed |
 
-If your project uses macros, run `dbt parse` first and OpenPipeline will pick up
-the manifest on its own. Re-run it when the project changes, because the
+If your project uses macros, run `dbt compile` first and OpenPipeline will pick up
+the manifest on its own, and use the compiled SQL in it for the stories and column
+lineage. (`dbt parse` also writes a manifest, but without compiled SQL, so
+stories fall back to the files.) Re-run it when the project changes, because the
 manifest is a snapshot.
 
 ## What next

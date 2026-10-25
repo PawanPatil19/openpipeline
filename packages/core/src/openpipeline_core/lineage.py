@@ -17,15 +17,14 @@ from collections import deque
 from collections.abc import Callable
 from typing import NamedTuple
 
-import sqlglot
 from sqlglot import exp
 from sqlglot.lineage import lineage as sqlglot_lineage
 from sqlglot.optimizer import build_scope, qualify
 from sqlglot.optimizer.scope import Scope, traverse_scope
 
-from openpipeline_core import jinja
 from openpipeline_core.graph import ModelGraph
 from openpipeline_core.models import Node, NodeKind, Project
+from openpipeline_core.sql_source import RelationIndex, readable_sql
 
 _log = logging.getLogger(__name__)
 
@@ -48,6 +47,7 @@ class ColumnLineage:
         self._columns: dict[str, list[str]] = {}
         self._direct_up: dict[str, dict[str, list[ColumnRef]]] = {}
         self._direct_down: dict[ColumnRef, list[ColumnRef]] = {}
+        self._relations = RelationIndex(project)
         self._by_table: dict[str, str] = {}
         for uid, node in project.nodes.items():
             if node.kind != NodeKind.SOURCE:
@@ -112,7 +112,9 @@ class ColumnLineage:
             documented = [c.name for c in node.columns]
             self._columns[uid] = documented
             self._direct_up[uid] = {}
-            if node.kind in (NodeKind.MODEL, NodeKind.SNAPSHOT) and node.raw_sql.strip():
+            if node.kind in (NodeKind.MODEL, NodeKind.SNAPSHOT) and (
+                node.raw_sql.strip() or node.compiled_sql.strip()
+            ):
                 try:
                     self._read_model(node, documented)
                 except Exception:  # best effort: never let one model break the project
@@ -144,7 +146,7 @@ class ColumnLineage:
         return dict.fromkeys(self._columns.get(uid, []), "unknown")
 
     def _read_model(self, node: Node, documented: list[str]) -> None:
-        tree = sqlglot.parse_one(jinja.to_plain_sql(node.raw_sql), read=self._dialect)
+        tree = readable_sql(self.project, node, self._dialect, index=self._relations).tree
         if not isinstance(tree, exp.Query):
             return
 
