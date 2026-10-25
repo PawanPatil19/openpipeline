@@ -108,3 +108,24 @@ def test_for_keeps_body_once_and_other_tags_are_dropped() -> None:
 def test_comments_and_config_are_still_removed() -> None:
     sql = "{{ config(materialized='table') }}{# note {{ x }} #}select 1"
     assert jinja.to_plain_sql(sql) == "select 1"
+
+
+def test_incremental_branch_is_skipped_for_the_full_build() -> None:
+    sql = (
+        "select * from {{ ref('events') }}\n"
+        "{% if is_incremental() %}where loaded_at > (select max(loaded_at) from {{ this }})"
+        "{% endif %}"
+    )
+    assert "where" not in jinja.to_plain_sql(sql)
+
+    with_else = "select {% if is_incremental() %}a{% else %}b{% endif %} from t"
+    assert jinja.to_plain_sql(with_else) == "select b from t"
+
+    negated = "select {% if not is_incremental() %}a{% else %}b{% endif %} from t"
+    assert jinja.to_plain_sql(negated) == "select a from t"
+
+    nested_else = (
+        "select {% if x %}{% if is_incremental() %}a{% else %}b{% endif %}"
+        "{% else %}c{% endif %} from t"
+    )
+    assert jinja.to_plain_sql(nested_else) == "select b from t"

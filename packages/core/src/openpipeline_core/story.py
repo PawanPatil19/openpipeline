@@ -495,6 +495,10 @@ def _column_story(
     how = described.text if described.exact else f"calculated as {described.text}"
     if described.exact and is_predicate(inner):
         how = f"true when {how}"
+    elif isinstance(inner, (exp.Literal, exp.Boolean)) or (
+        isinstance(inner, exp.Cast) and isinstance(inner.this, exp.Literal)
+    ):
+        how = f"always {how}"
     aggregates = [a for a in inner.find_all(exp.AggFunc) if a.find_ancestor(exp.Window) is None]
     if aggregates and 1 <= len(group_keys) <= 2:
         how += f" per {join_words(group_keys)}"

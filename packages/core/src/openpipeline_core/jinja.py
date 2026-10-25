@@ -95,12 +95,27 @@ def find_materialized(sql: str) -> str | None:
 
 
 class _Frame:
-    __slots__ = ("inside", "kind")
+    __slots__ = ("inside", "kind", "outer", "taken")
 
-    def __init__(self, kind: str, inside: bool) -> None:
+    def __init__(self, kind: str, inside: bool, outer: bool = True) -> None:
         self.kind = kind
         self.inside = inside
         """Whether text inside this block is kept."""
+        self.outer = outer
+        """Whether the text around this block is kept."""
+        self.taken = inside
+        """Whether a branch of this ``if`` has been kept already."""
+
+
+_INCREMENTAL_RE = re.compile(r"^\s*is_incremental\s*\(\s*\)\s*$")
+
+
+def _incremental_only(condition: str) -> bool:
+    """``{% if is_incremental() %}``: a branch that only runs on incremental builds.
+
+    We describe the full build, so that branch is skipped in favour of ``else``.
+    """
+    return _INCREMENTAL_RE.match(condition) is not None
 
 
 def _strip_statements(sql: str) -> str:
@@ -131,11 +146,21 @@ def _strip_statements(sql: str) -> str:
             continue
         name, rest = tag.group(1), tag.group(2)
         here = emitting()
-        if name in ("if", "for"):
-            stack.append(_Frame(name, here))
+        if name == "if":
+            stack.append(_Frame(name, here and not _incremental_only(rest), here))
+        elif name == "for":
+            stack.append(_Frame(name, here, here))
         elif name in ("elif", "else"):
             if stack and stack[-1].kind in ("if", "for"):
-                stack[-1].inside = False
+                frame = stack[-1]
+                take = (
+                    frame.kind == "if"
+                    and frame.outer
+                    and not frame.taken
+                    and (name == "else" or not _incremental_only(rest))
+                )
+                frame.inside = take
+                frame.taken = frame.taken or take
         elif name in _SKIP_BLOCKS or (name == "set" and "=" not in rest):
             stack.append(_Frame(name, False))
         elif name in _END_TAGS:

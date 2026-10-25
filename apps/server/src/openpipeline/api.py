@@ -147,7 +147,7 @@ def create_app(
     @app.get("/api/models/{name}/story")
     def story(name: str) -> ModelStory:
         node = node_or_404(name)
-        return explain_model(state.project(), node.unique_id, lineage=state.lineage())
+        return explain_model(state.project(), node.unique_id, lineage=state.cached_lineage())
 
     @app.get("/api/models/{name}/impact")
     def impact(name: str) -> Impact:

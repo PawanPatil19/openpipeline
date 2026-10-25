@@ -62,7 +62,7 @@ def test_star_over_unknown_columns_is_kept_and_names_the_source() -> None:
     story = explain_model(project, "m")
     assert [(c.name, c.how) for c in story.columns] == [
         ("*", "every column from raw.t"),
-        ("one", "1"),
+        ("one", "always 1"),
     ]
     assert story.steps[0] == "Reads raw.t."
 

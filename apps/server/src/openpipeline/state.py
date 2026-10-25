@@ -22,6 +22,9 @@ class ProjectState:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
         self._lock = threading.Lock()
+        # Building lineage can take tens of seconds on a large project. It has its
+        # own lock so other requests are not held up while it runs.
+        self._lineage_lock = threading.Lock()
         self._fingerprint: tuple[int, int] | None = None
         self._project: Project | None = None
         self._graph: ModelGraph | None = None
@@ -47,11 +50,27 @@ class ProjectState:
     def lineage(self) -> ColumnLineage:
         """Column lineage for the whole project. Built on first use, rebuilt on reload."""
         self._refresh()
-        with self._lock:
-            if self._lineage is None:
+        with self._lineage_lock:
+            with self._lock:
+                if self._lineage is not None:
+                    return self._lineage
                 assert self._project is not None
                 assert self._graph is not None
-                self._lineage = ColumnLineage(self._project, self._graph)
+                project, graph = self._project, self._graph
+            built = ColumnLineage(project, graph)
+            with self._lock:
+                if self._project is project:
+                    self._lineage = built
+            return built
+
+    def cached_lineage(self) -> ColumnLineage | None:
+        """Column lineage if it is already built for the current project, else ``None``.
+
+        For callers that can do without it, such as stories, so they never wait
+        for a full build.
+        """
+        self._refresh()
+        with self._lock:
             return self._lineage
 
     def _refresh(self) -> None:
