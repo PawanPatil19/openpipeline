@@ -53,7 +53,10 @@ def _load_from_manifest(root: Path, config: dict[str, Any], manifest_path: Path)
         raise ProjectLoadError(f"Could not parse {manifest_path}: {exc}") from exc
 
     project = Project(
-        name=str(config.get("name", root.name)), root=str(root), loaded_from="manifest"
+        name=str(config.get("name", root.name)),
+        root=str(root),
+        loaded_from="manifest",
+        adapter=(manifest.get("metadata") or {}).get("adapter_type") or None,
     )
     tests_by_node: dict[str, dict[str, list[str]]] = {}
 
@@ -72,6 +75,8 @@ def _load_from_manifest(root: Path, config: dict[str, Any], manifest_path: Path)
             description=raw.get("description") or "",
             path=raw.get("original_file_path"),
             raw_sql=raw.get("raw_code") or raw.get("raw_sql") or "",
+            compiled_sql=raw.get("compiled_code") or raw.get("compiled_sql") or "",
+            relation_name=raw.get("relation_name") or None,
             materialized=(raw.get("config") or {}).get("materialized"),
             depends_on=list((raw.get("depends_on") or {}).get("nodes", [])),
             columns=[
@@ -93,6 +98,7 @@ def _load_from_manifest(root: Path, config: dict[str, Any], manifest_path: Path)
             kind=NodeKind.SOURCE,
             description=raw.get("description") or "",
             path=raw.get("original_file_path"),
+            relation_name=raw.get("relation_name") or None,
             columns=[
                 Column(
                     name=c.get("name", n),

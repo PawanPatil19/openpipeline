@@ -36,7 +36,9 @@ From top to bottom:
 4. **How it is built.** Numbered steps in plain words: where the data comes from,
    how tables are joined, what is filtered out, and how rows are rolled up.
 5. **Columns.** For each column, your description and how it is worked out
-   ("the total of amount", "passed through unchanged").
+   ("the total of amount per order_id", "passed through from stg_orders"), and
+   the step (CTE) where it was worked out. Columns are followed through CTEs and
+   `select *`, so you see the real column names, not `*`.
 6. **Business rules.** The [business rules](business-rules.md) the model carries.
 7. **Column lineage** and **Sample rows**. See
    [Search and column lineage](search-and-lineage.md) and
@@ -46,6 +48,13 @@ From top to bottom:
 The story is built from the structure of the SQL. It is instant, free, and
 private, because nothing is sent anywhere. For a more natural write-up, you can
 turn on [AI explanations](ai-explanations.md) as an extra.
+
+**Run `dbt compile` for better stories.** When the manifest has dbt's compiled SQL,
+OpenPipeline reads that instead of your files. Macros, `var()` and `if` blocks are
+already resolved there, so a column built with `{{ cents_to_dollars('subtotal') }}`
+is described as "subtotal divided by 100, as a number". Without compiled SQL it
+falls back to your files and shows macros by name ("the cents_to_dollars macro
+applied to subtotal"). The same SQL feeds column lineage.
 
 ## On the command line
 
@@ -58,8 +67,8 @@ openpipeline graph                        # the whole graph, as JSON
 ## Limits to know about
 
 - When OpenPipeline reads plain files, it understands `ref()`, `source()`, and
-  `config()`. Other Jinja (macros, `var()`, loops) cannot be read, and the story
-  for that model says so. Run `dbt parse` to switch to the manifest. See the
-  [FAQ](../faq.md).
+  `config()`. Macro calls are shown by name, only the first branch of an
+  `{% if %}` is read, and a `for` loop body is read once. Run `dbt compile` to use
+  the manifest and its compiled SQL instead. See the [FAQ](../faq.md).
 - A story describes what the SQL does. It cannot know why. Add the why to the
   description, or name it as a [business rule](business-rules.md).

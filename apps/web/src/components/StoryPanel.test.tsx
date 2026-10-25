@@ -21,8 +21,8 @@ const story = {
   steps: ["Read orders"],
   reads_from: ["orders"],
   columns: [
-    { name: "customer_id", how: "Taken from orders." },
-    { name: "total", how: "Sum of amount." },
+    { name: "customer_id", how: "Taken from orders.", from_step: null },
+    { name: "total", how: "Sum of amount.", from_step: "totals" },
   ],
   filters: [],
   grain: ["customer_id"],
@@ -131,7 +131,7 @@ describe("StoryPanel editing", () => {
   it("shows documented column text and saves only what changed", async () => {
     const { calls } = setup();
     expect(await screen.findByText("Customer key.")).toBeInTheDocument();
-    expect(screen.getByText("Sum of amount.")).toBeInTheDocument();
+    expect(screen.getByText("Sum of amount. · in step totals")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Edit column descriptions" }));
     await userEvent.type(screen.getByRole("textbox", { name: "Description for total" }), "Spend.");
     await userEvent.click(screen.getByRole("button", { name: "Save column descriptions" }));

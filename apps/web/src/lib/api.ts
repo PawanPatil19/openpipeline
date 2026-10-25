@@ -28,6 +28,7 @@ export interface ProjectInfo {
   name: string;
   root: string;
   loaded_from: "manifest" | "files";
+  adapter: string | null;
   model_count: number;
   source_count: number;
   warnings: string[];
@@ -46,6 +47,10 @@ export interface ModelNode {
   kind: NodeKind;
   description: string;
   path: string | null;
+  /** dbt's compiled SQL; empty unless the project was read from a manifest. */
+  compiled_sql: string;
+  /** Physical table name in the warehouse, when known. */
+  relation_name: string | null;
   columns: DocColumn[];
 }
 
@@ -73,6 +78,8 @@ export interface AIExplanation {
 export interface ColumnStory {
   name: string;
   how: string;
+  /** The CTE where this column was worked out; null for the final select or a pass-through. */
+  from_step: string | null;
 }
 
 export interface ModelStory {

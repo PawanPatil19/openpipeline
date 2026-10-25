@@ -38,10 +38,10 @@ already does. There is no login, so only do this on a network you trust.
 
 ### My story says it could not read the SQL
 
-OpenPipeline understands `ref()`, `source()`, and `config()`. Other Jinja, such as
-macros, `var()`, `is_incremental()`, and loops, cannot be read from plain files. Run
-`dbt parse` so OpenPipeline can use the manifest, where dbt has already worked those
-out.
+OpenPipeline understands `ref()`, `source()`, and `config()`, shows macro calls by
+name, and reads only the first branch of an `{% if %}`. Some Jinja still produces
+SQL it cannot read from plain files. Run `dbt compile` so OpenPipeline can use the
+manifest and the compiled SQL in it, where dbt has already worked those out.
 
 ### Jinja macros are not supported in sample rows
 

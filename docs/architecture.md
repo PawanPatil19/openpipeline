@@ -30,6 +30,17 @@ dependency graph, explains a model by reading its SQL structure, and diffs two
 versions of a project. It knows nothing about HTTP, so the PR summary action
 and any future tools can use it alone.
 
+Stories and column lineage read SQL through one function, `sql_source.readable_sql`.
+When the project came from a manifest and a model has dbt's `compiled_code`, that is
+parsed (in the dialect of the manifest's adapter) and its physical table names, such
+as `"dev"."main"."stg_orders"`, are mapped back to nodes through each node's
+`relation_name` and rewritten to the short names (`stg_orders`, `ecom.raw_orders`).
+Otherwise the raw file is used with `jinja.to_plain_sql`, which turns macro calls
+into `__macro__name(args)` functions and keeps the first branch of each `if`. The
+story (`story.py`) follows columns through CTEs, subqueries and `select *`, using
+upstream columns from the column lineage when it is given, and describes each
+expression with `describe.py`. Running `dbt compile` gives better stories.
+
 Column lineage lives in the core too (`lineage.py`). For each model it points
 every real table in the SQL at the node it refers to, lets sqlglot qualify the
 query and trace each output column, and records which upstream

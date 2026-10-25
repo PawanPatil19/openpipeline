@@ -19,6 +19,7 @@ def test_health_and_project(project_dir: Path) -> None:
     assert info["name"] == "jaffle_shop"
     assert info["model_count"] == 5
     assert info["source_count"] == 3
+    assert info["adapter"] is None  # read from files, so no manifest to ask
 
 
 def test_graph_story_impact(project_dir: Path) -> None:
@@ -28,6 +29,9 @@ def test_graph_story_impact(project_dir: Path) -> None:
 
     story = client.get("/api/models/customers/story").json()
     assert story["grain"] == ["customer_id", "first_name", "last_name"]
+    by_name = {c["name"]: c for c in story["columns"]}
+    assert by_name["lifetime_value"]["how"] == "the total of amount"
+    assert "from_step" in by_name["lifetime_value"]
 
     impact = client.get("/api/models/stg_orders/impact").json()
     assert impact["downstream"] == ["orders", "customers"]
@@ -145,3 +149,16 @@ def test_ai_explanation_errors(project_dir: Path, fake_ai: Any) -> None:
     client = _ai_client(project_dir, fake_ai)
     assert client.post("/api/models/nope/ai-explanation").status_code == 404
     assert client.post("/api/models/raw_orders/ai-explanation").status_code == 404
+
+
+def test_story_uses_cached_lineage_to_expand_star(tmp_path: Path) -> None:
+    (tmp_path / "dbt_project.yml").write_text("name: shop\nversion: '1'\n")
+    models = tmp_path / "models"
+    models.mkdir()
+    (models / "base.sql").write_text("select 1 as a, 2 as b")
+    (models / "wrap.sql").write_text("with x as (select * from {{ ref('base') }}) select * from x")
+    client = _client(tmp_path)
+    story = client.get("/api/models/wrap/story").json()
+    assert [c["name"] for c in story["columns"]] == ["a", "b"]
+    assert story["steps"][0] == "Reads base."
+    assert story["steps"][-1] == "Final result: everything from x."

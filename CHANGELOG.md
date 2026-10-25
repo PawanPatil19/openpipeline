@@ -6,6 +6,19 @@ All notable changes are listed here. The format follows
 
 ## Unreleased
 
+### Stories
+
+- Stories and column lineage use dbt's compiled SQL from the manifest when it is
+  there (run `dbt compile`). `Node` has `compiled_sql` and `relation_name`, and
+  `Project` has `adapter`.
+- Columns are followed through CTEs and `select *`, so every story lists the real
+  columns with how each was worked out and the step (`from_step`) it came from.
+- Expressions are described in plain English (`case`, `coalesce`, casts, arithmetic,
+  aggregates, window functions, dates, strings) instead of shown as SQL.
+- Plain-file reading is better: macro calls are shown by name instead of `NULL`, and
+  only the first branch of an `if` is read, so far fewer models fail to parse.
+- `group by 1` is shown as the column it means.
+
 ### Website
 
 - A landing page, the docs, and a read-only live demo of the web UI, hosted on Vercel

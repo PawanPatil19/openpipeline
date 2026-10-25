@@ -90,7 +90,9 @@ def create_mcp_server(
     @server.tool()
     def explain(name: str) -> dict[str, Any]:
         """Explain in plain English what a model does, step by step."""
-        data = explain_model(state.project(), name).model_dump(mode="json")
+        data = explain_model(state.project(), name, lineage=state.cached_lineage()).model_dump(
+            mode="json"
+        )
         data["rules"] = _rules_for(data["model"])
         return data
 

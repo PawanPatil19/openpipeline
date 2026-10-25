@@ -37,7 +37,7 @@ export function StoryPanel({ node }: { node: GraphNode }) {
   const documentedColumns: Record<string, string> = Object.fromEntries(
     (model.data?.columns ?? []).map((c) => [c.name, c.description]),
   );
-  const how = new Map((story.data?.columns ?? []).map((c) => [c.name, c.how]));
+  const how = new Map((story.data?.columns ?? []).map((c) => [c.name, c]));
   const columnNames = [
     ...(story.data?.columns ?? []).map((c) => c.name).filter((n) => n !== "*"),
     ...Object.keys(documentedColumns).filter((n) => !how.has(n)),
@@ -177,7 +177,14 @@ export function StoryPanel({ node }: { node: GraphNode }) {
                         ) : (
                           documentedColumns[name] && <p>{documentedColumns[name]}</p>
                         )}
-                        {how.get(name) && <span className="muted">{how.get(name)}</span>}
+                        {how.get(name) && (
+                          <span className="muted">
+                            {how.get(name)?.how}
+                            {how.get(name)?.from_step
+                              ? ` · in step ${how.get(name)?.from_step}`
+                              : ""}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

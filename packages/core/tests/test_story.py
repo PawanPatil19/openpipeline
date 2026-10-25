@@ -12,7 +12,7 @@ def test_customers_story(example_dir: Path) -> None:
     how = {c.name: c.how for c in story.columns}
     assert how["lifetime_value"] == "the total of amount"
     assert how["number_of_orders"] == "the number of order_id"
-    assert how["first_name"] == "passed through unchanged"
+    assert how["first_name"] == "passed through from stg_customers"
     assert "one row per customer_id" in story.summary
     assert "adds orders (keeping every row even without a match)" in story.steps[-1]
 
@@ -25,7 +25,7 @@ def test_ctes_become_steps(example_dir: Path) -> None:
 
 def test_filters_and_renames(example_dir: Path) -> None:
     story = explain_model(load_project(example_dir), "stg_orders")
-    assert story.filters == ["status <> 'test'"]
+    assert story.filters == ["status is not 'test'"]
     assert {c.name: c.how for c in story.columns}["customer_id"] == "renamed from user_id"
 
 

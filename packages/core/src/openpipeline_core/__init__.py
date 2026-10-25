@@ -17,7 +17,8 @@ from openpipeline_core.models import Column, Node, NodeKind, Project
 from openpipeline_core.preview import ChangePreview, FileDiff, ParseIssue, preview_changes
 from openpipeline_core.rules import ModelRule, Rule, RuleLink, RuleRegistry, load_rules
 from openpipeline_core.search import SearchHit, search_project
-from openpipeline_core.story import ModelStory, explain_model
+from openpipeline_core.sql_source import ReadableSQL, readable_sql
+from openpipeline_core.story import ColumnStory, ModelStory, explain_model
 
 __version__ = "1.0.0"
 
@@ -26,6 +27,7 @@ __all__ = [
     "Column",
     "ColumnLineage",
     "ColumnRef",
+    "ColumnStory",
     "DocsUpdate",
     "FileDiff",
     "FileEdit",
@@ -40,6 +42,7 @@ __all__ = [
     "Project",
     "ProjectDiff",
     "ProjectLoadError",
+    "ReadableSQL",
     "Rule",
     "RuleChange",
     "RuleImpact",
@@ -55,6 +58,7 @@ __all__ = [
     "load_rules",
     "plan_preview",
     "preview_changes",
+    "readable_sql",
     "render_diff_markdown",
     "search_project",
     "update_docs",
