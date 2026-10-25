@@ -18,7 +18,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://127.0.0.1:8484",
+      // changeOrigin sends Host: 127.0.0.1:8484, which the API accepts in open mode.
+      "/api": { target: "http://127.0.0.1:8484", changeOrigin: true },
     },
   },
   test: {

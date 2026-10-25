@@ -53,6 +53,13 @@ describe("demo mode", () => {
     expect(fetchMock).toHaveBeenLastCalledWith("/data/api/models/model.p.customers/sample.json");
   });
 
+  it("never calls /api/auth: the demo reports open writes locally and refuses at write time", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}"));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await api.auth()).toEqual({ writes: "open", token_valid: null });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("searches the graph in the browser", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(graph)));
     vi.stubGlobal("fetch", fetchMock);

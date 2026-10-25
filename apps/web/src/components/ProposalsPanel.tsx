@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api, type ChangePreview, type Proposal } from "../lib/api";
+import { useAuth } from "../lib/useAuth";
 import { DiffView } from "./DiffView";
 
 const KIND_LABEL = { added: "New file", modified: "Edited", deleted: "Deleted" } as const;
@@ -38,6 +39,7 @@ function Summary({ preview }: { preview: ChangePreview }) {
 
 function Comments({ proposal }: { proposal: Proposal }) {
   const qc = useQueryClient();
+  const { canWrite } = useAuth();
   const [text, setText] = useState("");
   const send = useMutation({
     mutationFn: () => api.comment(proposal.id, text.trim()),
@@ -60,22 +62,26 @@ function Comments({ proposal }: { proposal: Proposal }) {
           </li>
         ))}
       </ul>
-      <label>
-        <span className="visually-hidden">Feedback for the agent</span>
-        <textarea
-          rows={2}
-          placeholder="Leave feedback for the agent"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </label>
-      <button
-        type="button"
-        disabled={send.isPending || text.trim() === ""}
-        onClick={() => send.mutate()}
-      >
-        Send feedback
-      </button>
+      {canWrite && (
+        <>
+          <label>
+            <span className="visually-hidden">Feedback for the agent</span>
+            <textarea
+              rows={2}
+              placeholder="Leave feedback for the agent"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            disabled={send.isPending || text.trim() === ""}
+            onClick={() => send.mutate()}
+          >
+            Send feedback
+          </button>
+        </>
+      )}
       {send.isError && <p className="error">{send.error.message}</p>}
     </section>
   );
@@ -89,6 +95,7 @@ interface CardProps {
 
 function ProposalCard({ proposal, reviewing, onReview }: CardProps) {
   const qc = useQueryClient();
+  const { canWrite } = useAuth();
   const pending = proposal.status === "pending";
   const [reason, setReason] = useState("");
   const preview = useQuery({
@@ -167,7 +174,12 @@ function ProposalCard({ proposal, reviewing, onReview }: CardProps) {
 
       <Comments proposal={proposal} />
 
-      {pending && (
+      {pending && !canWrite && (
+        <p className="muted readonly-note">
+          Read-only: this server does not allow accepting or rejecting proposals.
+        </p>
+      )}
+      {pending && canWrite && (
         <>
           <label>
             <span className="visually-hidden">Reason for rejecting</span>

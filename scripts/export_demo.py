@@ -38,7 +38,7 @@ def export_demo(out_dir: Path) -> int:
 
     with tempfile.TemporaryDirectory(prefix="openpipeline-export-") as tmp:
         project_dir, _ = prepare_demo(Path(tmp) / "jaffle_shop")
-        app = create_app(project_dir, serve_ui=False, ai_client=None)
+        app = create_app(project_dir, serve_ui=False, ai_client=None, writes="off")
         client = TestClient(app)
 
         def fetch(url: str) -> Any:

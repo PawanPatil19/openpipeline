@@ -63,7 +63,13 @@ With Docker:
 
 ```bash
 docker run --rm -p 8484:8484 -v "$PWD:/project" ghcr.io/pawanpatil19/openpipeline
+docker logs <container>   # prints the write token and a link that opens with it
 ```
+
+The container listens on all interfaces, so changes (editing docs, accepting
+proposals, comments, AI calls) need a token. It makes one up and prints it, or use
+`-e OPENPIPELINE_TOKEN=...`. Add `-e OPENPIPELINE_READ_ONLY=1` for a server that
+refuses every write. See [Write access and security](docs/reference/security.md).
 
 You do not need dbt installed or warehouse credentials. OpenPipeline reads
 `target/manifest.json` when it exists (run `dbt parse` for the most accurate
@@ -91,7 +97,7 @@ or `propose_docs`. See [Working with AI agents](https://openpipeline.vercel.app/
 
 ```bash
 openpipeline demo                        # the example project plus a proposal to review
-openpipeline serve [PROJECT]             # web UI and API on :8484
+openpipeline serve [PROJECT]             # web UI and API on :8484 (--token, --read-only)
 openpipeline explain customers [PROJECT] # explain one model (add --ai for an AI write-up)
 openpipeline lineage customers lifetime_value [PROJECT]
 openpipeline sample customers [PROJECT]  # a few rows, on sample data

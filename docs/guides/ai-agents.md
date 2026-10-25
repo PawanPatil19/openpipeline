@@ -42,6 +42,12 @@ files until a person accepts.
 
     With Docker Compose, the `mcp` service already does this on port 8485.
 
+    On a loopback address the endpoint is open. On any other address (including
+    Docker and Compose) it needs `Authorization: Bearer <token>`; set `--token` or
+    `OPENPIPELINE_TOKEN`, or read the generated one from the startup output. The
+    stdio setup above is local-only and needs no token. Agents can only propose
+    either way. See [Write access and security](../reference/security.md).
+
 !!! tip
     Run `openpipeline serve` on the same project at the same time. Agents file
     proposals and you review them in the web UI.

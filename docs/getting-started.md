@@ -42,6 +42,12 @@ it never touches your files. It already has an agent proposal waiting in the
     and AI extras. For [AI explanations](guides/ai-explanations.md), pass your
     key with `-e ANTHROPIC_API_KEY`.
 
+    The container listens on all interfaces, so saving changes needs a token. It
+    prints one when it starts (`docker logs <container>`), with a link that opens
+    the UI ready to edit. To choose it, add `-e OPENPIPELINE_TOKEN=...`. For a
+    server that refuses every change, add `-e OPENPIPELINE_READ_ONLY=1`. See
+    [Write access and security](reference/security.md).
+
 === "Docker Compose"
 
     Runs the web UI and the MCP server together:
@@ -52,7 +58,8 @@ it never touches your files. It already has an agent proposal waiting in the
 
     The UI is on <http://localhost:8484> and the MCP server on
     `http://localhost:8485/mcp`. Without `DBT_PROJECT_DIR` it uses the bundled
-    example.
+    example. Set `OPENPIPELINE_TOKEN` so both services share one token:
+    `OPENPIPELINE_TOKEN=choose-something-long docker compose up`.
 
 ## Point it at your dbt project
 

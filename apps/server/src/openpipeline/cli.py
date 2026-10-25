@@ -10,6 +10,7 @@ import typer
 
 from openpipeline import __version__
 from openpipeline.ai import AIError, AIService, default_client
+from openpipeline.security import BearerTokenMiddleware, browser_url, resolve_write_mode
 from openpipeline_core import (
     ColumnLineage,
     ModelGraph,
@@ -51,6 +52,23 @@ DialectOpt = Annotated[
         help="SQL dialect of the project, such as snowflake or bigquery.",
     ),
 ]
+TokenOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--token",
+        envvar="OPENPIPELINE_TOKEN",
+        help="Require this Bearer token for writes (and for MCP over HTTP). "
+        "Made up and printed when you listen on a non-loopback address without one.",
+    ),
+]
+ReadOnlyOpt = Annotated[
+    bool,
+    typer.Option(
+        "--read-only",
+        envvar="OPENPIPELINE_READ_ONLY",
+        help="Refuse every write: no editing docs, accepting proposals, comments, or AI calls.",
+    ),
+]
 
 
 def _load(path: Path) -> Project:
@@ -75,29 +93,60 @@ def serve(
     reload: Annotated[bool, typer.Option(help="Restart on code changes (dev only).")] = False,
     sample_data: SampleDataOpt = None,
     dialect: DialectOpt = None,
+    token: TokenOpt = None,
+    read_only: ReadOnlyOpt = False,
 ) -> None:
-    """Start the web UI and API."""
+    """Start the web UI and API.
+
+    Writes are open on a loopback address, need a token on any other address, and are
+    refused with --read-only.
+    """
     import uvicorn
 
     from openpipeline.api import create_app
 
     _load(project_dir)  # Fail fast with a clear message.
+    settings = resolve_write_mode(host, token, read_only)
     typer.echo(
         f"OpenPipeline {__version__} serving {project_dir.resolve()} on http://{host}:{port}"
     )
+    if settings.mode == "off":
+        typer.echo("Read-only: edits, proposal decisions, comments and AI calls are refused.")
+    elif settings.mode == "token":
+        if settings.generated:
+            typer.echo(f"Listening on {host}, so writes need a token. Generated for this run:")
+            typer.echo(f"  {settings.token}")
+            typer.echo("Open this link to use it in the browser:")
+            typer.echo(f"  {browser_url(host, port, settings.token)}")
+            typer.echo("Pass --token or OPENPIPELINE_TOKEN to choose your own.")
+        else:
+            typer.echo(f"Writes need the token you gave. Open {browser_url(host, port)}?token=...")
     if reload:
         import os
 
         os.environ["OPENPIPELINE_PROJECT_DIR"] = str(project_dir.resolve())
+        os.environ["OPENPIPELINE_HOST"] = host
+        os.environ["OPENPIPELINE_PORT"] = str(port)
+        if settings.token:
+            os.environ["OPENPIPELINE_TOKEN"] = settings.token
+        if settings.mode == "off":
+            os.environ["OPENPIPELINE_READ_ONLY"] = "1"
         if sample_data:
             os.environ["OPENPIPELINE_SAMPLE_DATA"] = str(sample_data.resolve())
         if dialect:
             os.environ["OPENPIPELINE_DIALECT"] = dialect
         uvicorn.run("openpipeline.app:app", host=host, port=port, reload=True)
     else:
-        uvicorn.run(
-            create_app(project_dir, sample_data=sample_data, dialect=dialect), host=host, port=port
+        api = create_app(
+            project_dir,
+            sample_data=sample_data,
+            dialect=dialect,
+            writes=settings.mode,
+            write_token=settings.token,
+            host=host,
+            port=port,
         )
+        uvicorn.run(api, host=host, port=port)
 
 
 @app.command()
@@ -110,8 +159,13 @@ def mcp(
     port: Annotated[int, typer.Option(envvar="OPENPIPELINE_MCP_PORT")] = 8485,
     sample_data: SampleDataOpt = None,
     dialect: DialectOpt = None,
+    token: TokenOpt = None,
 ) -> None:
-    """Run the MCP server for AI agents."""
+    """Run the MCP server for AI agents.
+
+    stdio is local to the agent that starts it. streamable-http needs a Bearer token
+    unless it listens on a loopback address.
+    """
     from openpipeline.mcp_server import create_mcp_server
 
     _load(project_dir)
@@ -119,7 +173,18 @@ def mcp(
     if transport == "stdio":
         server.run("stdio")
     elif transport == "streamable-http":
-        server.run("streamable-http", host=host, port=port)
+        import uvicorn
+        from starlette.types import ASGIApp
+
+        settings = resolve_write_mode(host, token, read_only=False)
+        mcp_app: ASGIApp = server.streamable_http_app(host=host)
+        if settings.token:
+            if settings.generated:
+                typer.echo(f"Listening on {host}, so agents need a token. Generated for this run:")
+                typer.echo(f"  {settings.token}")
+                typer.echo("Clients send it as 'Authorization: Bearer <token>'.")
+            mcp_app = BearerTokenMiddleware(mcp_app, settings.token)
+        uvicorn.run(mcp_app, host=host, port=port)
     else:
         raise typer.BadParameter("transport must be stdio or streamable-http")
 
@@ -330,6 +395,8 @@ def demo(
         bool,
         typer.Option("--serve/--no-serve", help="Start the server, or just prepare the folder."),
     ] = True,
+    token: TokenOpt = None,
+    read_only: ReadOnlyOpt = False,
 ) -> None:
     """Try everything: the example project plus a proposal waiting for your review."""
     from openpipeline.demo import prepare_demo
@@ -344,4 +411,4 @@ def demo(
         return
     typer.echo(f"Demo project: {root}")
     typer.echo("An agent proposal is waiting for you in the Proposals tab.")
-    serve(root, host=host, port=port, reload=False)
+    serve(root, host=host, port=port, reload=False, token=token, read_only=read_only)

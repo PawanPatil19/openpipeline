@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api, type DocsUpdate, type GraphNode } from "../lib/api";
+import { useAuth } from "../lib/useAuth";
 import { AiExplain } from "./AiExplain";
 import { ColumnLineage } from "./ColumnLineage";
 import { ModelRules } from "./ModelRules";
@@ -8,6 +9,7 @@ import { SampleRows } from "./SampleRows";
 
 export function StoryPanel({ node }: { node: GraphNode }) {
   const queryClient = useQueryClient();
+  const { canWrite } = useAuth();
   const isModel = node.kind === "model";
   const story = useQuery({ queryKey: ["story", node.id], queryFn: () => api.story(node.id) });
   const impact = useQuery({ queryKey: ["impact", node.id], queryFn: () => api.impact(node.id) });
@@ -105,7 +107,7 @@ export function StoryPanel({ node }: { node: GraphNode }) {
             ) : (
               <p className="muted">No description yet.</p>
             )}
-            {model.data && (
+            {model.data && canWrite && (
               <button
                 type="button"
                 className="link-button"
@@ -119,7 +121,7 @@ export function StoryPanel({ node }: { node: GraphNode }) {
       {!isModel && story.data?.description && <p className="lede">{story.data.description}</p>}
       {save.isError && <p className="error">Could not save: {save.error.message}</p>}
 
-      {isModel && aiStatus.data?.available && (
+      {isModel && canWrite && aiStatus.data?.available && (
         <AiExplain
           name={node.id}
           columnNames={columnNames}

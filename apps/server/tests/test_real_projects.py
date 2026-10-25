@@ -9,9 +9,11 @@ from fastapi.testclient import TestClient
 from openpipeline.api import create_app
 from openpipeline.mcp_server import create_mcp_server
 
+LOCAL = "http://127.0.0.1"
+
 
 def test_api_on_tuva(tuva_dir: Path) -> None:
-    client = TestClient(create_app(tuva_dir, serve_ui=False))
+    client = TestClient(create_app(tuva_dir, serve_ui=False), base_url=LOCAL)
     info = client.get("/api/project").json()
     assert info["model_count"] >= 300
 

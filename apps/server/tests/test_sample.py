@@ -12,6 +12,8 @@ from openpipeline.api import create_app
 from openpipeline.sample import MAX_LIMIT, SampleEngine, clamp_limit, json_safe
 from openpipeline.state import ProjectState
 
+LOCAL = "http://127.0.0.1"
+
 duckdb = pytest.importorskip("duckdb")
 
 MODELS = ["stg_customers", "stg_orders", "stg_payments", "orders", "customers"]
@@ -197,7 +199,7 @@ def test_json_safe() -> None:
 
 
 def test_api(project_dir: Path) -> None:
-    client = TestClient(create_app(project_dir, serve_ui=False))
+    client = TestClient(create_app(project_dir, serve_ui=False), base_url=LOCAL)
     status = client.get("/api/sample/status").json()
     assert status["duckdb"] is True
     assert {t["name"] for t in status["tables"]} == {"raw.customers", "raw.orders", "raw.payments"}
@@ -220,7 +222,7 @@ def test_api(project_dir: Path) -> None:
 
 def test_api_without_duckdb(project_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("openpipeline.sample.duckdb_installed", lambda: False)
-    client = TestClient(create_app(project_dir, serve_ui=False))
+    client = TestClient(create_app(project_dir, serve_ui=False), base_url=LOCAL)
     status = client.get("/api/sample/status").json()
     assert status["duckdb"] is False
     assert "openpipeline[preview]" in status["install_hint"]

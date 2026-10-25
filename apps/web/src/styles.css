@@ -714,3 +714,32 @@ button.primary {
   font-family: ui-monospace, Menlo, monospace;
   font-weight: 500;
 }
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+
+.dialog {
+  background: var(--surface);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  width: min(420px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+}
+
+.dialog h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.readonly-note {
+  font-size: 13px;
+}
