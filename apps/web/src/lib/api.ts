@@ -104,6 +104,54 @@ export interface ModelStory {
   parse_error: string | null;
 }
 
+/** One word of the business's own, from `openpipeline.yml` or a dbt `meta.label`. */
+export interface GlossaryTerm {
+  name: string;
+  label: string;
+  definition: string;
+  aliases: string[];
+  origin: "glossary" | "meta";
+}
+
+export interface GlossaryResponse {
+  terms: GlossaryTerm[];
+  warnings: string[];
+}
+
+export interface BusinessColumn {
+  name: string;
+  label: string;
+  /** How the column is worked out, in business words. */
+  meaning: string;
+  definition: string | null;
+}
+
+export interface TermUsed {
+  name: string;
+  label: string;
+  definition: string;
+}
+
+export interface Reference {
+  name: string;
+  label: string;
+}
+
+/** A story told with glossary labels; `technical` is the same story with SQL names. */
+export interface BusinessStory {
+  model: string;
+  title: string;
+  definition: string;
+  summary: string;
+  reads_from: Reference[];
+  grain: string[];
+  columns: BusinessColumn[];
+  steps: string[];
+  filters: string[];
+  terms_used: TermUsed[];
+  technical: ModelStory;
+}
+
 export interface Impact {
   model: string;
   upstream: string[];
@@ -319,6 +367,9 @@ export const api = {
       method: "POST",
     }),
   story: (name: string) => request<ModelStory>(`/api/models/${enc(name)}/story`),
+  businessStory: (name: string) =>
+    request<BusinessStory>(`/api/models/${enc(name)}/business-story`),
+  glossary: () => request<GlossaryResponse>("/api/glossary"),
   impact: (name: string) => request<Impact>(`/api/models/${enc(name)}/impact`),
   rules: () => request<RulesResponse>("/api/rules"),
   modelRules: (name: string) => request<ModelRule[]>(`/api/models/${enc(name)}/rules`),

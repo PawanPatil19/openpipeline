@@ -84,6 +84,15 @@ output, and caches the answer under `.openpipeline/cache/ai` keyed by a hash of
 everything sent. Without the `ai` extra or a key, the API reports AI as
 unavailable and everything else is unchanged.
 
+**Business words** are a second telling of the same story. `glossary.py` reads
+the `glossary:` list in `openpipeline.yml` and `meta.label` from dbt's YAML into a
+`Glossary` (with warnings, never errors), falls back to a humanizer for names it
+does not list, and can return the new `openpipeline.yml` with a term added (again
+through ruamel.yaml, never writing). `business.py` takes a finished `ModelStory`
+and puts labels in by recognising identifier tokens, skipping quoted values, so the
+story engine is unchanged. The MCP `propose_glossary_term` tool files the edit as
+a proposal.
+
 **`actions/pr-summary`** is a composite GitHub Action that checks out the base
 branch, runs `openpipeline review base head`, and posts or updates a single PR
 comment.

@@ -20,13 +20,16 @@ from openpipeline.sample import DEFAULT_LIMIT, MAX_LIMIT, SampleEngine, SampleRe
 from openpipeline.security import WriteGuard, WriteMode
 from openpipeline.state import ProjectState
 from openpipeline_core import (
+    BusinessStory,
     ChangePreview,
     DocsUpdate,
+    Glossary,
     ModelRule,
     ModelStory,
     Node,
     NodeKind,
     Rule,
+    business_story,
     explain_model,
     preview_changes,
     update_docs,
@@ -142,7 +145,9 @@ def create_app(
             adapter=p.adapter,
             model_count=len(p.models()),
             source_count=sum(1 for n in p.nodes.values() if n.kind.value == "source"),
-            warnings=[*p.warnings, *state.rules().warnings],
+            warnings=list(
+                dict.fromkeys([*p.warnings, *state.rules().warnings, *state.glossary().warnings])
+            ),
         )
 
     @app.get("/api/graph")
@@ -189,6 +194,17 @@ def create_app(
     def story(name: str) -> ModelStory:
         node = node_or_404(name)
         return explain_model(state.project(), node.unique_id, lineage=state.cached_lineage())
+
+    @app.get("/api/models/{name}/business-story")
+    def business_story_for(name: str) -> BusinessStory:
+        """The story in the glossary's words, with the technical story inside it."""
+        node = node_or_404(name)
+        technical = explain_model(state.project(), node.unique_id, lineage=state.cached_lineage())
+        return business_story(state.project(), technical, state.glossary(), labeler=state.labeler())
+
+    @app.get("/api/glossary")
+    def glossary() -> Glossary:
+        return state.glossary()
 
     @app.get("/api/models/{name}/impact")
     def impact(name: str) -> Impact:

@@ -1,5 +1,13 @@
 """OpenPipeline core: read a dbt project, build its graph, and explain it."""
 
+from openpipeline_core.business import (
+    BusinessColumn,
+    BusinessStory,
+    Labeler,
+    Reference,
+    TermUsed,
+    business_story,
+)
 from openpipeline_core.compile import PreviewPlan, UnsupportedJinja, compile_sql, plan_preview
 from openpipeline_core.diff import (
     ModelChange,
@@ -10,6 +18,13 @@ from openpipeline_core.diff import (
     render_diff_markdown,
 )
 from openpipeline_core.docs import DocsUpdate, FileEdit, update_docs
+from openpipeline_core.glossary import (
+    Glossary,
+    GlossaryTerm,
+    add_glossary_term,
+    humanize,
+    load_glossary,
+)
 from openpipeline_core.graph import ModelGraph
 from openpipeline_core.lineage import ColumnLineage, ColumnRef
 from openpipeline_core.loader import ProjectLoadError, load_project
@@ -23,6 +38,8 @@ from openpipeline_core.story import ColumnStory, ModelStory, explain_model
 __version__ = "0.1.0"
 
 __all__ = [
+    "BusinessColumn",
+    "BusinessStory",
     "ChangePreview",
     "Column",
     "ColumnLineage",
@@ -31,6 +48,9 @@ __all__ = [
     "DocsUpdate",
     "FileDiff",
     "FileEdit",
+    "Glossary",
+    "GlossaryTerm",
+    "Labeler",
     "ModelChange",
     "ModelGraph",
     "ModelRule",
@@ -43,17 +63,23 @@ __all__ = [
     "ProjectDiff",
     "ProjectLoadError",
     "ReadableSQL",
+    "Reference",
     "Rule",
     "RuleChange",
     "RuleImpact",
     "RuleLink",
     "RuleRegistry",
     "SearchHit",
+    "TermUsed",
     "UnsupportedJinja",
     "__version__",
+    "add_glossary_term",
+    "business_story",
     "compile_sql",
     "diff_projects",
     "explain_model",
+    "humanize",
+    "load_glossary",
     "load_project",
     "load_rules",
     "plan_preview",

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
+import { GlossaryPanel } from "./components/GlossaryPanel";
 import { GraphView } from "./components/GraphView";
 import { ProposalsPanel } from "./components/ProposalsPanel";
 import { ReviewLegend } from "./components/ReviewLegend";
@@ -14,7 +15,7 @@ import { DEMO_COMMAND, isDemo } from "./lib/demo";
 import { useAuth } from "./lib/useAuth";
 import { useGraphFocus } from "./lib/useGraphFocus";
 
-type Tab = "model" | "rules" | "proposals";
+type Tab = "model" | "rules" | "glossary" | "proposals";
 
 export function App() {
   const project = useQuery({ queryKey: ["project"], queryFn: api.project });
@@ -69,6 +70,13 @@ export function App() {
           </button>
           <button type="button" aria-pressed={tab === "rules"} onClick={() => setTab("rules")}>
             Rules
+          </button>
+          <button
+            type="button"
+            aria-pressed={tab === "glossary"}
+            onClick={() => setTab("glossary")}
+          >
+            Glossary
           </button>
           <button
             type="button"
@@ -132,6 +140,8 @@ export function App() {
                 setSelected(null);
               }}
             />
+          ) : tab === "glossary" ? (
+            <GlossaryPanel />
           ) : tab === "rules" ? (
             <RulesPanel
               onSelectModel={(name) => {

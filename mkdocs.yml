@@ -55,6 +55,7 @@ nav:
       - Sample rows: guides/sample-rows.md
       - Search and column lineage: guides/search-and-lineage.md
       - Business rules: guides/business-rules.md
+      - Business words: guides/business-words.md
       - PR summaries: guides/pr-summaries.md
       - Working with AI agents: guides/ai-agents.md
   - Reference:

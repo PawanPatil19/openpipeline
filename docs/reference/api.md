@@ -27,6 +27,7 @@ This page is a map of what is there.
 | `GET /api/graph` | Every node and edge of the graph. |
 | `GET /api/models/{name}` | One model: SQL, columns, config, dependencies. |
 | `GET /api/models/{name}/story` | The plain-English story. |
+| `GET /api/models/{name}/business-story` | The same story in the glossary's [business words](../guides/business-words.md), with the technical story inside it as `technical`. |
 | `GET /api/models/{name}/impact` | Upstream and downstream model names. |
 | `PUT /api/models/{name}/docs` | Save a new description and column descriptions into the YAML file. Body: `{"description": "...", "columns": {"column_name": "..."}}`. Leave out anything that should stay as it is. Answers `400` if the edit cannot be made. |
 
@@ -61,6 +62,12 @@ does not exist.
 | --- | --- |
 | `GET /api/rules` | Every rule, plus warnings. |
 | `GET /api/models/{name}/rules` | The rules a model carries. |
+
+## Glossary
+
+| Method and path | What it returns |
+| --- | --- |
+| `GET /api/glossary` | Every [glossary](../guides/business-words.md) term, plus warnings. |
 
 ## Proposals
 

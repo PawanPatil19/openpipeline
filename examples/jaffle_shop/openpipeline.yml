@@ -1,3 +1,57 @@
+# The shop's own words. OpenPipeline uses these in "Business words" mode instead of
+# model and column names. See docs/guides/business-words.md.
+glossary:
+  - name: customers
+    label: Customers
+    definition: One row per person who has signed up, with their order history.
+  - name: orders
+    label: Orders
+    definition: One row per order placed in the shop, with the total amount paid.
+  - name: stg_customers
+    label: Cleaned customer list
+    definition: Customers as they come from the shop, tidied up and renamed.
+  - name: stg_orders
+    label: Cleaned orders
+    definition: Orders as they come from the shop, with checkout test orders removed.
+  - name: stg_payments
+    label: Cleaned payments
+    definition: Payments with the amount converted from cents to dollars.
+  - name: customer_id
+    label: Customer
+    definition: The person who placed the order.
+    aliases: [user_id]
+  - name: order_id
+    label: Order
+    definition: One purchase made in the shop.
+  - name: payment_id
+    label: Payment
+    definition: One attempt to pay for an order.
+  - name: order_date
+    label: Order date
+    definition: The day the customer placed the order.
+  - name: first_order_date
+    label: First order date
+    definition: The day the customer placed their first order.
+  - name: number_of_orders
+    label: Number of orders
+    definition: How many orders the customer has placed.
+  - name: status
+    label: Order status
+    definition: Where the order is in its life, such as placed, shipped or completed.
+  - name: amount
+    label: Amount paid
+    definition: Money received for the order, in dollars.
+  - name: lifetime_value
+    label: Lifetime value
+    definition: Everything the customer has paid us, in dollars, across all their orders.
+  - name: payment_method
+    label: Payment method
+    definition: How the customer paid, such as credit card or gift card.
+  - name: first_name
+    label: First name
+  - name: last_name
+    label: Last name
+
 # Business rules for this project. See docs/rules.md in the OpenPipeline repo.
 rules:
   - id: no-test-orders

@@ -35,6 +35,8 @@ def test_tools_are_registered(project_dir: Path) -> None:
         "propose_change",
         "get_proposal",
         "propose_docs",
+        "propose_glossary_term",
+        "list_glossary",
         "list_proposals",
         "sample_rows",
     }

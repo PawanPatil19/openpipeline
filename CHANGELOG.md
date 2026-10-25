@@ -48,6 +48,25 @@ All notable changes are listed here. The format follows
 - The Vite dev proxy now sets `changeOrigin`, so `make dev` keeps working with the
   `Host` check.
 
+### Business words
+
+- A **Business words** mode tells a story in the business's own words: a title and
+  summary made of labels, columns as a label and what it means, and the SQL and
+  technical names tucked behind **Show details**. It is a toggle in the story panel
+  (remembered per browser), with definitions on hover and keyboard focus.
+- A `glossary:` list in `openpipeline.yml` (`name`, `label`, optional `definition` and
+  `aliases`), and `meta: {label, definition}` on dbt models and columns. Problems are
+  warnings. Names without a term get a readable label (`stg_order_items` is "Order items",
+  `is_food_order` is "Is food order"; Tuva-style `a__b` uses `b`).
+- A Glossary tab in the web UI, `GET /api/glossary`, and
+  `GET /api/models/{name}/business-story`.
+- `openpipeline explain MODEL --business`.
+- MCP: `propose_glossary_term` files a proposal that edits `openpipeline.yml` (a person
+  still accepts it), `list_glossary` reads the glossary, and `explain` returns a
+  `business` view.
+- Core: `Glossary`, `load_glossary`, `humanize`, `add_glossary_term`, `Labeler` and
+  `business_story`. `ModelStory` is unchanged.
+
 ### Website
 
 - A landing page, the docs, and a read-only live demo of the web UI, hosted on Vercel

@@ -257,3 +257,35 @@ def test_tuva_compiled_sql_resolves_to_node_names(tuva_project: Project) -> None
     assert cols["occurrence_count"].from_step == "distinct_counts"
     assert cols["occurrence_row_count"].how.startswith("the position of each row within its")
     assert cols["claim_id"].how == "passed through from input_layer__medical_claim"
+
+
+def test_business_stories_for_every_tuva_model(
+    tuva_project: Project, tuva_stories: dict[str, ModelStory]
+) -> None:
+    from openpipeline_core import Glossary, Labeler, business_story
+
+    labeler = Labeler(tuva_project, Glossary())
+    for name, technical in tuva_stories.items():
+        story = business_story(tuva_project, technical, labeler=labeler)
+        assert story.title, name
+        assert story.summary, name
+        assert story.technical == technical
+        assert not any(s.startswith("Reads ") for s in story.steps), name
+        assert len(story.columns) == len(technical.columns), name
+        assert all(c.label and c.meaning for c in story.columns), name
+        # Tuva's double-underscore namespacing never reaches a label.
+        assert "__" not in story.title, name
+        assert "_" not in story.title, name
+        assert not any("__dbt__cte__" in s for s in story.steps), name
+
+
+def test_business_story_tuva_sample(
+    tuva_project: Project, tuva_stories: dict[str, ModelStory]
+) -> None:
+    from openpipeline_core import Glossary, Labeler, business_story
+
+    labeler = Labeler(tuva_project, Glossary())
+    namespaced = next(n for n in tuva_stories if "__" in n)
+    story = business_story(tuva_project, tuva_stories[namespaced], labeler=labeler)
+    assert story.title == labeler.label(namespaced)
+    assert story.title[0].isupper()
