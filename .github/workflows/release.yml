@@ -1,12 +1,18 @@
 name: Release
 
-# Push a tag like v1.0.0 to publish. The tag must match the version in both
+# Push a tag like v0.1.0 to publish. The tag must match the version in both
 # packages' __init__.py (scripts/bump_version.py keeps them in sync).
 on:
   push:
     tags: ["v*.*.*"]
-  # A manual run builds everything (wheels and multi-arch image) but publishes nothing.
+  # A manual run builds everything (wheels and multi-arch image). It publishes
+  # nothing, unless you tick "testpypi" to rehearse the upload on TestPyPI.
   workflow_dispatch:
+    inputs:
+      testpypi:
+        description: "Also upload the wheels to TestPyPI (a dry run of the PyPI step)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,6 +59,26 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  testpypi:
+    name: Rehearse on TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.testpypi
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/openpipeline/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
 
   docker:
     name: Publish Docker image

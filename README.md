@@ -122,7 +122,8 @@ Read [docs/architecture.md](docs/architecture.md) for how the parts fit.
 
 ## Status
 
-Version 1.0. The features above are stable and covered by tests. Bug reports and
+Early (0.x). The features above work and are covered by tests, including on real
+public dbt projects, but names and options may still change before 1.0. Bug reports and
 ideas are welcome in the [issue tracker](https://github.com/PawanPatil19/openpipeline/issues).
 
 ## Contributing

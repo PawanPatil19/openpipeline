@@ -10,24 +10,24 @@ Releases are cut by pushing a version tag. The
    `ghcr.io/pawanpatil19/openpipeline`, with an SBOM and provenance.
 5. Creates a GitHub release with generated notes and the wheels attached.
 
-Tags with a pre-release suffix (for example `v1.1.0-rc1`) are marked as
+Tags with a pre-release suffix (for example `v0.2.0-rc1`) are marked as
 pre-releases and do not move the `latest` Docker tag.
 
 ## Steps
 
 ```bash
-python3 scripts/bump_version.py 1.2.3
+python3 scripts/bump_version.py 0.2.0
 uv lock
-# Move the Unreleased section of CHANGELOG.md under a 1.2.3 heading.
-git commit -am "Release 1.2.3"
-git tag v1.2.3
-git push origin main v1.2.3
+# Move the Unreleased section of CHANGELOG.md under a 0.2.0 heading.
+git commit -am "Release 0.2.0"
+git tag v0.2.0
+git push origin main v0.2.0
 ```
 
 `bump_version.py` sets the version in both Python packages, in
 `apps/web/package.json`, and in the exact `openpipeline-core==` pin of the app.
 Never edit those by hand. Check them with
-`python3 scripts/bump_version.py --check 1.2.3`. The release workflow runs the
+`python3 scripts/bump_version.py --check 0.2.0`. The release workflow runs the
 same check against the tag and stops if anything differs.
 
 ## One-time setup
@@ -49,24 +49,33 @@ These need a repository admin and only have to be done once, before the first ta
   action. The site build (`Build docs`) runs only when site, docs, or web files change, so add
   it as a required check as well if you want it enforced.
 
-## Cutting 1.0.0
+## Cutting 0.1.0 (the first release)
+
+The version is 0.x on purpose: the project is young and names may still change.
+1.0 comes after real teams have used it.
 
 1. Start from an up-to-date `main` with every check green.
 2. Confirm the one-time setup above is done. A missing PyPI publisher fails the
    release after the tag is pushed.
-3. Run `python3 scripts/bump_version.py --check 1.0.0`. It should print nothing.
-4. Check that `CHANGELOG.md` has a `1.0.0` heading and an empty Unreleased section.
-5. Run `make lint typecheck test build docs-build`. Install the built wheel in a
+3. Optional but recommended: rehearse on TestPyPI. Add the same two pending
+   publishers on <https://test.pypi.org> with environment `testpypi`, create a
+   `testpypi` environment in GitHub, then run the Release workflow by hand from
+   `main` (Actions > Release > Run workflow) with "testpypi" ticked. Check
+   `pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openpipeline==0.1.0`.
+4. Run `python3 scripts/bump_version.py --check 0.1.0`. It should print nothing.
+5. In `CHANGELOG.md`, fold the Unreleased section into the `0.1.0` section, give it
+   today's date, and leave an empty Unreleased section.
+6. Run `make lint typecheck test build docs-build`. Install the built wheels in a
    fresh virtual environment and run `openpipeline demo --no-serve` to confirm the
-   example ships inside it.
-6. Tag and push: `git tag v1.0.0 && git push origin main v1.0.0`.
-7. Approve the `pypi` environment when GitHub asks. Wait for the PyPI, Docker, and
+   example ships inside them.
+7. Tag and push: `git tag v0.1.0 && git push origin main v0.1.0`.
+8. Approve the `pypi` environment when GitHub asks. Wait for the PyPI, Docker, and
    GitHub release jobs to finish.
-8. Make the GHCR package public if this is the first image.
-9. Try it from scratch: `pip install openpipeline==1.0.0` and `openpipeline demo`,
-   then `docker run --rm -p 8484:8484 ghcr.io/pawanpatil19/openpipeline:1.0.0`.
-10. Check that https://openpipeline.vercel.app/ (the landing page, `/docs/`, and `/demo/`) is live and that the
-    pull request action works with `@v1.0.0`.
+9. Make the GHCR package public if this is the first image.
+10. Try it from scratch: `pip install openpipeline==0.1.0` and `openpipeline demo`,
+    then `docker run --rm -p 8484:8484 ghcr.io/pawanpatil19/openpipeline:0.1.0`.
+11. Check that https://openpipeline.vercel.app/ (the landing page, `/docs/`, and
+    `/demo/`) is live and that the pull request action works with `@v0.1.0`.
 
 ## Website (Vercel)
 

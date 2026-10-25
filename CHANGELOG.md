@@ -25,9 +25,11 @@ All notable changes are listed here. The format follows
   at <https://openpipeline.vercel.app/>. It replaces the GitHub Pages docs site.
 - `make site` builds it into `build/site` with `scripts/build_site.sh`.
 
-## 1.0.0 - 2026-10-24
+## 0.1.0 - not yet released
 
-The first stable release. OpenPipeline reads a dbt project and explains it in plain
+The first public release. Everything under Unreleased above ships in it too.
+This was prepared as 1.0.0 on 2026-10-24 but never published; it is labelled 0.1.0
+because the project is still early and names may change before 1.0. OpenPipeline reads a dbt project and explains it in plain
 English, with a graph, stories, column lineage, search, sample rows, and business
 rules. It lets people review changes before they land, whether a teammate or an AI
 agent proposed them: a pull request summary on GitHub, and an MCP server whose
