@@ -12,10 +12,10 @@ Tests reach them through the `dbt_labs_jaffle_dir` and `tuva_dir` fixtures in ea
 
 ## jaffle_shop_dbt_labs
 
-dbt Labs' public demo project, used unmodified for testing:
-https://github.com/dbt-labs/jaffle-shop. The clone has no LICENSE file and the
-GitHub API could not be queried when this was vendored, so no license is recorded
-here. Contents: `dbt_project.yml`, `packages.yml`, `models/`, `macros/` and the slimmed
+dbt Labs' public demo project, used unmodified and only for testing (it is not
+shipped in any package): https://github.com/dbt-labs/jaffle-shop. The upstream
+repository declares no license. All rights stay with dbt Labs; we will remove it on
+request. Contents: `dbt_project.yml`, `packages.yml`, `models/`, `macros/` and the slimmed
 `target/manifest.json`. Seeds and `dbt_packages` are not copied.
 
 ## tuva
@@ -38,8 +38,7 @@ reachable, so packages were placed in `dbt_packages/` by hand instead of `dbt de
 ```sh
 # jaffle-shop (its require-dbt-version is >=2.0.0, hence --no-version-check)
 cd jaffle-shop
-dbt parse --no-version-check --profiles-dir <dir with a duckdb "default" profile>
-dbt compile --no-version-check --profiles-dir <same>
+dbt compile --no-version-check --profiles-dir <dir with a duckdb "default" profile>
 
 # tuva
 cd tuva/integration_tests
