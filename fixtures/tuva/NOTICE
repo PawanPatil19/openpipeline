@@ -1,0 +1,6 @@
+This directory is derived from the Tuva Project (https://github.com/tuva-health/tuva),
+commit 9ab0d1c3e4a920f5acebdd5f9a2f456fb20fe7e2, licensed under the Apache License 2.0 (see LICENSE).
+
+Changes: dbt_project.yml is copied from the project's integration_tests directory
+unmodified. manifest.json.gz is a slimmed dbt manifest (see scripts/slim_manifest.py)
+compiled from that project; it drops fields OpenPipeline does not read.

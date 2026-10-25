@@ -23,6 +23,7 @@ apps/server/src/openpipeline/static/
 
 # dbt and OpenPipeline runtime files
 target/
+!fixtures/**/target/
 dbt_packages/
 logs/
 .openpipeline/
