@@ -60,6 +60,7 @@ nav:
   - Reference:
       - Command line: reference/cli.md
       - HTTP API: reference/api.md
+      - Write access and security: reference/security.md
       - Configuration: reference/configuration.md
       - Architecture: architecture.md
       - Rules file format: rules.md

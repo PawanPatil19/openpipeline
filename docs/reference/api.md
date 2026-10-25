@@ -9,16 +9,20 @@ and response shapes, and try them out. The raw schema is at `/openapi.json`.
 
 This page is a map of what is there.
 
-!!! warning "No authentication"
-    The API has no login. By default it listens on `127.0.0.1`, so only your own
-    machine can reach it. If you bind it to a network address, put it behind your
-    own authentication.
+!!! warning "Writes can need a token"
+    Reads are always open. Writes (`PUT`, `POST`) are open only when the server
+    listens on a loopback address with no token. Otherwise they need
+    `Authorization: Bearer <token>` (`401` without it), or they are refused with
+    `403` in read-only mode. Writes must be sent as `Content-Type: application/json`
+    (`415` otherwise). `GET /api/auth` reports the mode. See
+    [Write access and security](security.md).
 
 ## Project and graph
 
 | Method and path | What it returns |
 | --- | --- |
 | `GET /api/health` | `{"status": "ok", "version": "..."}` |
+| `GET /api/auth` | `{"writes": "open" \| "token" \| "off", "token_valid": true \| false \| null}`. `token_valid` is only set in token mode. Never contains the token. |
 | `GET /api/project` | Project name, how it was loaded, model and source counts, warnings. |
 | `GET /api/graph` | Every node and edge of the graph. |
 | `GET /api/models/{name}` | One model: SQL, columns, config, dependencies. |

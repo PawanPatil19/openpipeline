@@ -32,7 +32,17 @@ Pick another with `--port 9000`, or set `OPENPIPELINE_PORT`.
 ### I cannot reach it from another machine, or from outside Docker
 
 By default it listens only on `127.0.0.1`. Use `--host 0.0.0.0`. The Docker image
-already does. There is no login, so only do this on a network you trust.
+already does. Anyone who can reach the port can read the project, so only do this on
+a network you trust. Changes need a token: if you do not give `--token`, one is made
+up and printed at startup with a link that opens the UI ready to edit. See
+[Write access and security](reference/security.md).
+
+### I get "A write token is required" or "This server is read-only"
+
+The server is in token mode (`401`) or read-only mode (`403`). Open the link printed
+at startup, or paste the token into the box the UI shows. In Docker, the token is in
+`docker logs <container>`. Read-only comes from `--read-only` or
+`OPENPIPELINE_READ_ONLY=1`.
 
 ## Reading models
 

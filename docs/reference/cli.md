@@ -24,6 +24,7 @@ Try everything with no setup.
 
 ```bash
 openpipeline demo [--dir PATH] [--host HOST] [--port PORT] [--serve | --no-serve]
+                  [--token TEXT] [--read-only]
 ```
 
 Copies the bundled jaffle_shop example, files one realistic pending proposal from
@@ -36,6 +37,7 @@ rules, with a rationale), then starts the server.
 | `--host` | `127.0.0.1` | Address to listen on. Also `OPENPIPELINE_HOST`. |
 | `--port` | `8484` | Port to listen on. Also `OPENPIPELINE_PORT`. |
 | `--no-serve` | off | Only prepare the folder and print its path. |
+| `--token`, `--read-only` | | Same as for `serve`. On the default loopback address the demo is open. |
 
 ## openpipeline serve
 
@@ -44,15 +46,29 @@ Start the web UI and the HTTP API on one port.
 ```bash
 openpipeline serve [PROJECT] [--host HOST] [--port PORT] [--reload]
                    [--sample-data PATH] [--dialect NAME]
+                   [--token TEXT] [--read-only]
 ```
+
+Reads are always open. Changes (saving descriptions, accepting proposals, comments,
+AI calls) depend on the write mode, which is chosen like this:
+
+1. `--read-only`: every write is refused with `403`.
+2. `--token`: writes need `Authorization: Bearer <token>`.
+3. No token, and `--host` is `127.0.0.1`, `::1`, or `localhost`: writes are open.
+4. No token, and any other `--host`: a random token is generated, printed once with
+   a link that opens the UI with it (`http://localhost:8484/?token=...`), and used.
+
+See [Write access and security](security.md) for the details.
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `--host` | `127.0.0.1` | Address to listen on. Also `OPENPIPELINE_HOST`. Use `0.0.0.0` in a container. |
+| `--host` | `127.0.0.1` | Address to listen on. Also `OPENPIPELINE_HOST`. Use `0.0.0.0` in a container; writes then need a token. |
 | `--port` | `8484` | Port to listen on. Also `OPENPIPELINE_PORT`. |
 | `--reload` | off | Restart on code changes. For developing OpenPipeline itself. |
 | `--sample-data PATH` | `sample_data/` | Folder of sample CSV or Parquet files, or a `.duckdb` file, for [sample rows](../guides/sample-rows.md). Also `OPENPIPELINE_SAMPLE_DATA`. |
 | `--dialect NAME` | none | SQL dialect of the project, such as `snowflake`. Also `OPENPIPELINE_DIALECT`. |
+| `--token TEXT` | none | Require this Bearer token for writes. Also `OPENPIPELINE_TOKEN`. Never printed. |
+| `--read-only` | off | Refuse every write. Also `OPENPIPELINE_READ_ONLY=1`. |
 
 ## openpipeline mcp
 
@@ -61,7 +77,12 @@ Run the [MCP server](../guides/ai-agents.md) for AI agents.
 ```bash
 openpipeline mcp [PROJECT] [--transport stdio|streamable-http]
                  [--host HOST] [--port PORT] [--sample-data PATH] [--dialect NAME]
+                 [--token TEXT]
 ```
+
+`stdio` is a local process started by the agent, with no network port. The HTTP
+transport needs a Bearer token unless it listens on a loopback address; with no
+`--token` on another address, one is generated and printed.
 
 | Option | Default | What it does |
 | --- | --- | --- |
@@ -69,6 +90,7 @@ openpipeline mcp [PROJECT] [--transport stdio|streamable-http]
 | `--host` | `127.0.0.1` | Address for the HTTP transport. Also `OPENPIPELINE_HOST`. |
 | `--port` | `8485` | Port for the HTTP transport. Also `OPENPIPELINE_MCP_PORT`. |
 | `--sample-data`, `--dialect` | | Same as for `serve`. |
+| `--token TEXT` | none | Bearer token for the HTTP transport. Also `OPENPIPELINE_TOKEN`. |
 
 ## openpipeline explain
 

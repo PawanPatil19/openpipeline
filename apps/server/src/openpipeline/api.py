@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Collection
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -16,6 +17,7 @@ from openpipeline.files import write_file
 from openpipeline.lineage_views import lineage_router
 from openpipeline.proposals import Proposal, ProposalStore, StaleProposalError, Status
 from openpipeline.sample import DEFAULT_LIMIT, MAX_LIMIT, SampleEngine, SampleResult, SampleStatus
+from openpipeline.security import WriteGuard, WriteMode
 from openpipeline.state import ProjectState
 from openpipeline_core import (
     ChangePreview,
@@ -62,6 +64,15 @@ class StatusUpdate(BaseModel):
     """Accept even if files changed since the proposal was made."""
 
 
+class AuthInfo(BaseModel):
+    """How writes are protected on this server. Never contains the token."""
+
+    writes: WriteMode
+    """open: no token needed. token: send a Bearer token. off: read-only."""
+    token_valid: bool | None = None
+    """In token mode, whether the caller's Bearer token is right. Otherwise null."""
+
+
 class CommentCreate(BaseModel):
     text: str = Field(min_length=1)
     author: str = "reviewer"
@@ -74,12 +85,35 @@ def create_app(
     ai_client: AIClient | None = None,
     sample_data: str | Path | None = None,
     dialect: str | None = None,
+    writes: WriteMode = "open",
+    write_token: str | None = None,
+    host: str = "127.0.0.1",
+    port: int | None = None,
+    allowed_hosts: Collection[str] = (),
 ) -> FastAPI:
+    """Build the API.
+
+    ``writes`` says who may change things: ``"open"`` (anyone who can reach it; only
+    allowed when ``host`` is a loopback address, and requests must then carry a
+    loopback ``Host`` header, on ``port`` if given), ``"token"`` (``write_token`` as a
+    Bearer token), or ``"off"`` (read-only). ``allowed_hosts`` adds extra Host names
+    accepted in open mode. Reads are always open.
+    """
+    guard = WriteGuard(writes, write_token, host=host, port=port, allowed_hosts=allowed_hosts)
     state = ProjectState(project_dir)
     sampler = SampleEngine(state, sample_data=sample_data, dialect=dialect)
     proposals = ProposalStore(state.root)
     ai = AIService(state.root, ai_client if ai_client is not None else default_client())
     app = FastAPI(title="OpenPipeline", version=__version__, docs_url="/api/docs")
+
+    @app.middleware("http")
+    async def protect(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        # Every non-GET request under /api is a write, so new endpoints are covered too.
+        response = guard.check(request) or await call_next(request)
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        return response
 
     def node_or_404(name: str) -> Node:
         node = state.project().get(name)
@@ -90,6 +124,13 @@ def create_app(
     @app.get("/api/health")
     def health() -> dict[str, str]:
         return {"status": "ok", "version": __version__}
+
+    @app.get("/api/auth")
+    def auth(request: Request) -> AuthInfo:
+        return AuthInfo(
+            writes=guard.mode,
+            token_valid=guard.token_valid(request) if guard.mode == "token" else None,
+        )
 
     @app.get("/api/project")
     def project_info() -> ProjectInfo:

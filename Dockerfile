@@ -35,6 +35,9 @@ COPY --from=app /app/.venv /app/.venv
 # A demo project so `docker run` shows something. Mount your own over /project.
 COPY --chown=openpipeline:openpipeline examples/jaffle_shop /project
 
+# The server listens on all interfaces here, so it never runs open: with no
+# OPENPIPELINE_TOKEN it makes one up and prints it (see `docker logs`).
+# Use -e OPENPIPELINE_TOKEN=... to choose it, or -e OPENPIPELINE_READ_ONLY=1 for read-only.
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     OPENPIPELINE_PROJECT_DIR=/project \

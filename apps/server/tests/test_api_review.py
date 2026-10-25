@@ -7,9 +7,11 @@ from fastapi.testclient import TestClient
 from openpipeline.api import create_app
 from openpipeline.proposals import FileChange, Proposal, ProposalStore
 
+LOCAL = "http://127.0.0.1"
+
 
 def _client(project_dir: Path) -> TestClient:
-    return TestClient(create_app(project_dir, serve_ui=False))
+    return TestClient(create_app(project_dir, serve_ui=False), base_url=LOCAL)
 
 
 def _propose(

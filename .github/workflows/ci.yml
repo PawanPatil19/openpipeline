@@ -80,6 +80,17 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8484/api/project | grep -q '"model_count":5'
           curl -fsS http://127.0.0.1:8484/ | grep -q '<div id="root">'
+          # The image listens on all interfaces, so it must not accept anonymous writes.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+            -H 'Content-Type: application/json' -d '{"description":"x"}' \
+            http://127.0.0.1:8484/api/models/customers/docs)
+          test "$code" = 401
+          curl -fsS http://127.0.0.1:8484/api/auth | grep -q '"writes":"token"'
+          # The token printed in the logs is accepted.
+          token=$(docker logs op 2>&1 | sed -n 's|.*[?]token=\([A-Za-z0-9_-]*\).*|\1|p' | head -n 1)
+          test -n "$token"
+          curl -fsS -H "Authorization: Bearer $token" http://127.0.0.1:8484/api/auth \
+            | grep -q '"token_valid":true'
       - if: failure()
         run: docker logs op
 

@@ -13,11 +13,13 @@ from openpipeline.api import create_app
 from openpipeline.cli import app as cli_app
 from openpipeline.mcp_server import create_mcp_server
 
+LOCAL = "http://127.0.0.1"
+
 runner = CliRunner()
 
 
 def _client(project_dir: Path) -> TestClient:
-    return TestClient(create_app(project_dir, serve_ui=False))
+    return TestClient(create_app(project_dir, serve_ui=False), base_url=LOCAL)
 
 
 def _call(server: Any, tool: str, args: dict[str, Any]) -> Any:

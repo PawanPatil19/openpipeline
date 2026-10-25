@@ -6,9 +6,12 @@ import { ReviewLegend } from "./components/ReviewLegend";
 import { RulesPanel } from "./components/RulesPanel";
 import { SearchBox } from "./components/SearchBox";
 import { StoryPanel } from "./components/StoryPanel";
+import { TokenDialog } from "./components/TokenDialog";
 import { api } from "./lib/api";
+import { promptForToken } from "./lib/auth";
 import { ColumnFocusContext } from "./lib/columnFocus";
 import { DEMO_COMMAND, isDemo } from "./lib/demo";
+import { useAuth } from "./lib/useAuth";
 import { useGraphFocus } from "./lib/useGraphFocus";
 
 type Tab = "model" | "rules" | "proposals";
@@ -22,6 +25,7 @@ export function App() {
     () => new Set(rules.data?.rules.flatMap((r) => r.applies_to.map((l) => l.model)) ?? []),
     [rules.data],
   );
+  const auth = useAuth();
   const [tab, setTab] = useState<Tab>("model");
   const showModelTab = useCallback(() => setTab("model"), []);
   const [reviewId, setReviewId] = useState<string | null>(null);
@@ -75,6 +79,21 @@ export function App() {
           </button>
         </nav>
       </header>
+
+      {auth.mode === "off" && (
+        <div className="banner" role="note">
+          Read-only: this server does not allow edits, accepting proposals, comments, or AI calls.
+        </div>
+      )}
+      {auth.mode === "token" && auth.tokenValid === false && (
+        <div className="banner" role="note">
+          Changes need a write token.{" "}
+          <button type="button" className="link-button" onClick={promptForToken}>
+            Enter token
+          </button>
+        </div>
+      )}
+      <TokenDialog />
 
       {project.data && project.data.warnings.length > 0 && (
         <div className="banner" role="status">

@@ -7,9 +7,12 @@ from fastapi.testclient import TestClient
 from openpipeline.api import create_app
 from openpipeline.proposals import FileChange, Proposal, ProposalStore
 
+LOCAL = "http://127.0.0.1"
+JSON = {"Content-Type": "application/json"}
+
 
 def _client(project_dir: Path) -> TestClient:
-    return TestClient(create_app(project_dir, serve_ui=False))
+    return TestClient(create_app(project_dir, serve_ui=False), base_url=LOCAL, headers=JSON)
 
 
 def test_health_and_project(project_dir: Path) -> None:
@@ -80,7 +83,7 @@ def test_serves_ui_when_built(project_dir: Path, tmp_path: Path, monkeypatch) ->
     (static / "assets").mkdir(parents=True)
     (static / "index.html").write_text("<html>openpipeline</html>")
     monkeypatch.setattr("openpipeline.api.STATIC_DIR", static)
-    client = TestClient(create_app(project_dir))
+    client = TestClient(create_app(project_dir), base_url=LOCAL, headers=JSON)
     assert "openpipeline" in client.get("/").text
     assert "openpipeline" in client.get("/models/customers").text  # SPA fallback
     assert client.get("/api/health").status_code == 200
@@ -112,7 +115,9 @@ def test_save_docs_rejects_unknown_and_non_models(project_dir: Path) -> None:
 
 
 def _ai_client(project_dir: Path, fake: Any) -> TestClient:
-    return TestClient(create_app(project_dir, serve_ui=False, ai_client=fake))
+    return TestClient(
+        create_app(project_dir, serve_ui=False, ai_client=fake), base_url=LOCAL, headers=JSON
+    )
 
 
 def test_ai_status(project_dir: Path, fake_ai: Any) -> None:

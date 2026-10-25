@@ -1,5 +1,6 @@
 // Types mirror the Python API in apps/server/src/openpipeline/api.py.
 
+import { authHeaders, promptForToken } from "./auth";
 import { DEMO_READ_ONLY_MESSAGE, demoUrl, isDemo, searchGraph } from "./demo";
 
 export type NodeKind = "model" | "source" | "seed" | "snapshot";
@@ -32,6 +33,15 @@ export interface ProjectInfo {
   model_count: number;
   source_count: number;
   warnings: string[];
+}
+
+/** open: no token needed. token: writes need the Bearer token. off: read-only. */
+export type WriteMode = "open" | "token" | "off";
+
+/** `GET /api/auth`. Never contains the token. */
+export interface AuthInfo {
+  writes: WriteMode;
+  token_valid: boolean | null;
 }
 
 export interface DocColumn {
@@ -252,11 +262,17 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (isDemo()) return demoRequest<T>(path, init);
+  const isWrite = init?.method !== undefined && init.method !== "GET";
   const res = await fetch(path, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(isWrite || path === "/api/auth" ? authHeaders() : {}),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
+    if (res.status === 401 && isWrite) promptForToken();
     const body = await res.json().catch(() => ({}));
     const detail = body.detail;
     if (detail && typeof detail === "object") {
@@ -286,6 +302,9 @@ async function demoRequest<T>(path: string, init?: RequestInit): Promise<T> {
 const enc = encodeURIComponent;
 
 export const api = {
+  // The hosted demo has no server to ask, so it never calls /api/auth.
+  auth: (): Promise<AuthInfo> =>
+    isDemo() ? Promise.resolve({ writes: "open", token_valid: null }) : request("/api/auth"),
   project: () => request<ProjectInfo>("/api/project"),
   graph: () => request<Graph>("/api/graph"),
   model: (name: string) => request<ModelNode>(`/api/models/${enc(name)}`),

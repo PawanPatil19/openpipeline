@@ -19,6 +19,35 @@ All notable changes are listed here. The format follows
   only the first branch of an `if` is read, so far fewer models fail to parse.
 - `group by 1` is shown as the column it means.
 
+### Security
+
+- Writes to `openpipeline serve` are now protected. Saving descriptions
+  (`PUT /api/models/{name}/docs`), accepting or rejecting proposals, comments, and
+  AI explanations (which cost money) no longer work for anyone who can reach the
+  port. The server picks a write mode at startup:
+  - `open` on a loopback address with no token (today's local experience). In this
+    mode `/api` requests must carry a loopback `Host` header, to stop DNS rebinding.
+  - `token` when you pass `--token` or `OPENPIPELINE_TOKEN`, or listen on any other
+    address. Without a token, one is generated, printed once with a link
+    (`http://localhost:8484/?token=...`), and required as `Authorization: Bearer`.
+    The Docker image, which listens on `0.0.0.0`, therefore always uses a token.
+  - `off` with `--read-only` or `OPENPIPELINE_READ_ONLY=1`: every write answers `403`.
+- Writes must be sent as `Content-Type: application/json` (`415` otherwise), including
+  `POST /api/models/{name}/ai-explanation`. Scripts that posted it without a content
+  type need to add the header.
+- `GET /api/auth` reports the write mode and whether your token is valid. The web UI
+  keeps the token from `?token=` for the tab only, removes it from the address bar,
+  asks for it when a change is refused, and hides the edit, accept, comment, and AI
+  buttons when the server is read-only.
+- `openpipeline mcp --transport streamable-http` requires the same Bearer token on any
+  non-loopback address. The stdio transport is local-only. Agents can still only
+  propose changes.
+- New page: [Write access and security](docs/reference/security.md). `docker compose`
+  passes `OPENPIPELINE_TOKEN` and `OPENPIPELINE_READ_ONLY` to both services, and the
+  CI image smoke test checks that an anonymous write is rejected.
+- The Vite dev proxy now sets `changeOrigin`, so `make dev` keeps working with the
+  `Host` check.
+
 ### Website
 
 - A landing page, the docs, and a read-only live demo of the web UI, hosted on Vercel

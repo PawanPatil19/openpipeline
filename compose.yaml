@@ -4,11 +4,22 @@
 #
 # Then open http://localhost:8484 and point agents at http://localhost:8485/mcp.
 # Without DBT_PROJECT_DIR it uses the bundled example project.
+#
+# The containers listen on all interfaces, so writes (editing docs, accepting proposals,
+# comments, AI calls) and the MCP endpoint need a token. Set one for both services:
+#
+#   OPENPIPELINE_TOKEN=choose-a-long-random-string docker compose up
+#
+# Without it each service makes up its own and prints it: docker compose logs web mcp.
+# OPENPIPELINE_READ_ONLY=1 makes the web service refuse every write.
 
 x-openpipeline: &openpipeline
   image: ghcr.io/pawanpatil19/openpipeline:${OPENPIPELINE_VERSION:-latest}
   build: .
   restart: unless-stopped
+  environment:
+    OPENPIPELINE_TOKEN: ${OPENPIPELINE_TOKEN:-}
+    OPENPIPELINE_READ_ONLY: ${OPENPIPELINE_READ_ONLY:-}
   volumes:
     - ${DBT_PROJECT_DIR:-./examples/jaffle_shop}:/project
 
