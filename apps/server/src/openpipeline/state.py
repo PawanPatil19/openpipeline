@@ -7,9 +7,12 @@ from pathlib import Path
 
 from openpipeline_core import (
     ColumnLineage,
+    Glossary,
+    Labeler,
     ModelGraph,
     Project,
     RuleRegistry,
+    load_glossary,
     load_project,
     load_rules,
 )
@@ -29,6 +32,8 @@ class ProjectState:
         self._project: Project | None = None
         self._graph: ModelGraph | None = None
         self._rules: RuleRegistry | None = None
+        self._glossary: Glossary | None = None
+        self._labeler: Labeler | None = None
         self._lineage: ColumnLineage | None = None
 
     def project(self) -> Project:
@@ -46,6 +51,22 @@ class ProjectState:
         self._refresh()
         assert self._rules is not None
         return self._rules
+
+    def glossary(self) -> Glossary:
+        """Glossary terms from ``openpipeline.yml`` and ``meta.label`` entries."""
+        self._refresh()
+        assert self._glossary is not None
+        return self._glossary
+
+    def labeler(self) -> Labeler:
+        """Turns names into business labels. Built once per reload, since it indexes everything."""
+        self._refresh()
+        with self._lock:
+            if self._labeler is None:
+                assert self._project is not None
+                assert self._glossary is not None
+                self._labeler = Labeler(self._project, self._glossary)
+            return self._labeler
 
     def lineage(self) -> ColumnLineage:
         """Column lineage for the whole project. Built on first use, rebuilt on reload."""
@@ -81,6 +102,8 @@ class ProjectState:
             self._project = load_project(self.root)
             self._graph = ModelGraph(self._project)
             self._rules = load_rules(self.root, self._project)
+            self._glossary = load_glossary(self.root, self._project)
+            self._labeler = None
             self._lineage = None
             self._fingerprint = fp
 

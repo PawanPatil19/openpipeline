@@ -63,6 +63,7 @@ def export_demo(out_dir: Path) -> int:
         write("/api/project", project)
         graph = copy("/api/graph")
         copy("/api/rules")
+        copy("/api/glossary")
         # Never offer AI in the hosted demo, whatever the environment has set.
         write(
             "/api/ai",
@@ -77,6 +78,7 @@ def export_demo(out_dir: Path) -> int:
             base = f"/api/models/{slug(node['id'])}"
             copy(base)
             copy(f"{base}/story")
+            copy(f"{base}/business-story")
             copy(f"{base}/impact")
             copy(f"{base}/rules")
             for column in copy(f"{base}/columns"):

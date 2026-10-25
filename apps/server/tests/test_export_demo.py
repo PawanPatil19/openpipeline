@@ -32,7 +32,7 @@ def test_export_writes_every_read_endpoint(tmp_path: Path) -> None:
     assert "model.jaffle_shop.customers" in ids
     for node_id in ids:
         base = f"/api/models/{node_id}"
-        for suffix in ("", "/story", "/impact", "/rules", "/columns"):
+        for suffix in ("", "/story", "/business-story", "/impact", "/rules", "/columns"):
             assert (tmp_path / (base.lstrip("/") + suffix + ".json")).is_file(), base + suffix
 
     columns = read(tmp_path, "/api/models/model.jaffle_shop.customers/columns")

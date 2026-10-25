@@ -2,7 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api, type DocsUpdate, type GraphNode } from "../lib/api";
 import { useAuth } from "../lib/useAuth";
+import { readWordsMode, saveWordsMode, type WordsMode } from "../lib/wordsMode";
 import { AiExplain } from "./AiExplain";
+import { BusinessStoryView } from "./BusinessStoryView";
 import { ColumnLineage } from "./ColumnLineage";
 import { ModelRules } from "./ModelRules";
 import { SampleRows } from "./SampleRows";
@@ -12,6 +14,17 @@ export function StoryPanel({ node }: { node: GraphNode }) {
   const { canWrite } = useAuth();
   const isModel = node.kind === "model";
   const story = useQuery({ queryKey: ["story", node.id], queryFn: () => api.story(node.id) });
+  const [words, setWords] = useState<WordsMode>(readWordsMode);
+  const business = words === "business";
+  const businessStory = useQuery({
+    queryKey: ["business-story", node.id],
+    queryFn: () => api.businessStory(node.id),
+    enabled: business,
+  });
+  const chooseWords = (mode: WordsMode) => {
+    setWords(mode);
+    saveWordsMode(mode);
+  };
   const impact = useQuery({ queryKey: ["impact", node.id], queryFn: () => api.impact(node.id) });
   const model = useQuery({
     queryKey: ["model", node.id],
@@ -28,9 +41,13 @@ export function StoryPanel({ node }: { node: GraphNode }) {
     mutationFn: (update: DocsUpdate) => api.saveDocs(node.id, update),
     onSuccess: async () => {
       await Promise.all(
-        [["graph"], ["story", node.id], ["model", node.id], ["impact", node.id]].map((queryKey) =>
-          queryClient.invalidateQueries({ queryKey }),
-        ),
+        [
+          ["graph"],
+          ["story", node.id],
+          ["business-story", node.id],
+          ["model", node.id],
+          ["impact", node.id],
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });
@@ -73,10 +90,25 @@ export function StoryPanel({ node }: { node: GraphNode }) {
     <section className="panel" aria-label={`About ${node.name}`}>
       <header className="panel__header">
         <span className={`badge badge--${node.kind}`}>{node.kind}</span>
-        <h2>{node.name}</h2>
-        {node.path && <code className="muted">{node.path}</code>}
+        <h2>{business && businessStory.data ? businessStory.data.title : node.name}</h2>
+        {node.path && !business && <code className="muted">{node.path}</code>}
         {node.owner && <p className="muted">Owner: {node.owner}</p>}
       </header>
+
+      <fieldset className="words-toggle">
+        <legend className="visually-hidden">How to word the story</legend>
+        <button
+          type="button"
+          aria-pressed={business}
+          onClick={() => chooseWords("business")}
+          title="Tell the story with your glossary's words, with SQL names tucked away"
+        >
+          Business words
+        </button>
+        <button type="button" aria-pressed={!business} onClick={() => chooseWords("technical")}>
+          Technical
+        </button>
+      </fieldset>
 
       {isModel &&
         (descDraft !== null ? (
@@ -130,11 +162,19 @@ export function StoryPanel({ node }: { node: GraphNode }) {
         />
       )}
 
-      {story.isPending && <p className="muted">Reading the SQL…</p>}
-      {story.isError && (
+      {business && businessStory.isPending && <p className="muted">Reading the SQL…</p>}
+      {business && businessStory.isError && (
+        <p className="error">Could not explain this model: {businessStory.error.message}</p>
+      )}
+      {business && businessStory.data && (
+        <BusinessStoryView node={node} story={businessStory.data} />
+      )}
+
+      {!business && story.isPending && <p className="muted">Reading the SQL…</p>}
+      {!business && story.isError && (
         <p className="error">Could not explain this model: {story.error.message}</p>
       )}
-      {story.data && (
+      {!business && story.data && (
         <>
           <p>{story.data.summary}</p>
           {story.data.parse_error && (

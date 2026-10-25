@@ -101,6 +101,8 @@ so you can read, commit, or delete them by hand.
 | `preview_change` | Dry run of a change: summary, added, changed, removed, affected, warnings. Saves nothing. | `files` |
 | `propose_change` | File a proposal for a person to review. | `title`, `rationale`, `files`, `author`, `revises` |
 | `propose_docs` | Propose a new model description or column descriptions. | `model`, `description`, `columns`, `rationale`, `author` |
+| `list_glossary` | The business's labels and definitions for models and columns. | none |
+| `propose_glossary_term` | Propose a glossary term (or a better label or definition) as an edit to `openpipeline.yml`. See [business words](business-words.md). | `name`, `label`, `definition`, `rationale`, `author` |
 | `get_proposal` | A proposal's status and the comments people left on it. Poll after proposing. | `id` |
 | `list_proposals` | All proposals and whether each is pending, accepted, rejected, or superseded. | none |
 

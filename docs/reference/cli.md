@@ -97,12 +97,13 @@ transport needs a Bearer token unless it listens on a loopback address; with no
 Explain one model in plain English.
 
 ```bash
-openpipeline explain MODEL [PROJECT] [--json] [--ai]
+openpipeline explain MODEL [PROJECT] [--json] [--ai] [--business]
 ```
 
 | Option | What it does |
 | --- | --- |
 | `--json` | Print JSON instead of text. |
+| `--business` | Use the glossary's [business words](../guides/business-words.md) instead of model and column names. With `--json` the technical story is included as `technical`. |
 | `--ai` | Also ask Claude to explain it. Needs `openpipeline[ai]` and an API key. See [AI explanations](../guides/ai-explanations.md). |
 
 ## openpipeline graph

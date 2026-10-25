@@ -12,13 +12,17 @@ from openpipeline import __version__
 from openpipeline.ai import AIError, AIService, default_client
 from openpipeline.security import BearerTokenMiddleware, browser_url, resolve_write_mode
 from openpipeline_core import (
+    BusinessStory,
     ColumnLineage,
     ModelGraph,
+    ModelStory,
     Project,
     ProjectLoadError,
     Rule,
+    business_story,
     diff_projects,
     explain_model,
+    load_glossary,
     load_project,
     load_rules,
     render_diff_markdown,
@@ -197,6 +201,13 @@ def explain(
     ai: Annotated[
         bool, typer.Option("--ai", help="Also ask Claude to explain it (needs openpipeline\\[ai]).")
     ] = False,
+    business: Annotated[
+        bool,
+        typer.Option(
+            "--business",
+            help="Use the glossary's business words instead of model and column names.",
+        ),
+    ] = False,
 ) -> None:
     """Explain a model in plain English."""
     project = _load(project_dir)
@@ -215,12 +226,28 @@ def explain(
             )
         except AIError as exc:
             typer.secho(f"AI explanation not available: {exc}", fg=typer.colors.YELLOW, err=True)
+    told = business_story(project, story, load_glossary(project_dir, project)) if business else None
     if as_json:
-        data = story.model_dump(mode="json")
+        data = (told or story).model_dump(mode="json")
         if explanation is not None:
             data["ai"] = explanation.model_dump(mode="json")
         typer.echo(json.dumps(data, indent=2))
         return
+    if told is not None:
+        _print_business(told)
+    else:
+        _print_technical(story)
+    if explanation is not None:
+        typer.echo()
+        typer.secho(f"In plain words (written by {explanation.ai_model})", bold=True)
+        typer.echo(explanation.summary)
+        for note in explanation.columns:
+            typer.echo(f"  {note.name}: {note.description}")
+        for caveat in explanation.caveats:
+            typer.echo(f"  Check: {caveat}")
+
+
+def _print_technical(story: ModelStory) -> None:
     typer.secho(story.model, bold=True)
     if story.description:
         typer.echo(story.description)
@@ -232,14 +259,31 @@ def explain(
         typer.secho("Columns", bold=True)
         for column in story.columns:
             typer.echo(f"  {column.name}: {column.how}")
-    if explanation is not None:
+
+
+def _print_business(told: BusinessStory) -> None:
+    typer.secho(told.title, bold=True)
+    if told.definition:
+        typer.echo(told.definition)
+    typer.echo(told.summary)
+    for i, step in enumerate(told.steps, 1):
+        typer.echo(f"  {i}. {step}")
+    if told.filters:
         typer.echo()
-        typer.secho(f"In plain words (written by {explanation.ai_model})", bold=True)
-        typer.echo(explanation.summary)
-        for note in explanation.columns:
-            typer.echo(f"  {note.name}: {note.description}")
-        for caveat in explanation.caveats:
-            typer.echo(f"  Check: {caveat}")
+        typer.secho("Only rows where", bold=True)
+        for text in told.filters:
+            typer.echo(f"  {text}")
+    if told.columns:
+        typer.echo()
+        typer.secho("Columns", bold=True)
+        for column in told.columns:
+            typer.echo(f"  {column.label}: {column.meaning}")
+    defined = [t for t in told.terms_used if t.definition]
+    if defined:
+        typer.echo()
+        typer.secho("Words used", bold=True)
+        for term in defined:
+            typer.echo(f"  {term.label}: {term.definition}")
 
 
 @app.command()

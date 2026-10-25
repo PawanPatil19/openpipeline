@@ -19,6 +19,8 @@ from openpipeline.sample import SampleEngine
 from openpipeline.state import ProjectState
 from openpipeline_core import (
     DocsUpdate,
+    add_glossary_term,
+    business_story,
     explain_model,
     preview_changes,
     search_project,
@@ -52,7 +54,10 @@ def create_mcp_server(
             "propose_change again with revises set to the old proposal id; the old one is "
             "marked superseded. Models can carry business rules (see list_rules and the "
             "rules field of get_model and explain). If a change touches a rule, say so in "
-            "the rationale and name the rule."
+            "the rationale and name the rule. The glossary holds the business's own words for "
+            "models and columns: list_glossary shows it, explain returns a business view that "
+            "uses it, and propose_glossary_term files a new or corrected term for a person "
+            "to accept."
         ),
         version=__version__,
     )
@@ -89,11 +94,18 @@ def create_mcp_server(
 
     @server.tool()
     def explain(name: str) -> dict[str, Any]:
-        """Explain in plain English what a model does, step by step."""
-        data = explain_model(state.project(), name, lineage=state.cached_lineage()).model_dump(
-            mode="json"
-        )
+        """Explain in plain English what a model does, step by step.
+
+        The result has the technical story and, under ``business``, the same story in the
+        glossary's words (labels, definitions, and the glossary terms it uses).
+        """
+        technical = explain_model(state.project(), name, lineage=state.cached_lineage())
+        data = technical.model_dump(mode="json")
         data["rules"] = _rules_for(data["model"])
+        business = business_story(
+            state.project(), technical, state.glossary(), labeler=state.labeler()
+        )
+        data["business"] = business.model_dump(mode="json", exclude={"technical"})
         return data
 
     @server.tool()
@@ -106,6 +118,19 @@ def create_mcp_server(
         return {
             "rules": [r.model_dump(mode="json") for r in registry.rules],
             "warnings": registry.warnings,
+        }
+
+    @server.tool()
+    def list_glossary() -> dict[str, Any]:
+        """List the glossary: the business's own label and definition for models and columns.
+
+        Check it before proposing a term, and use these labels when you write for people
+        who do not read SQL.
+        """
+        glossary = state.glossary()
+        return {
+            "terms": [t.model_dump(mode="json") for t in glossary.terms],
+            "warnings": glossary.warnings,
         }
 
     @server.tool()
@@ -239,6 +264,36 @@ def create_mcp_server(
         proposal = store.create(
             Proposal(
                 title=f"Update docs for {model}",
+                rationale=rationale,
+                author=author,
+                changes=[FileChange(path=edit.path, content=edit.content)],
+            )
+        )
+        return {"id": proposal.id, "status": proposal.status, "path": edit.path}
+
+    @server.tool()
+    def propose_glossary_term(
+        name: str,
+        label: str,
+        definition: str = "",
+        rationale: str = "",
+        author: str = "agent",
+    ) -> dict[str, Any]:
+        """Propose a glossary term: the business's word and definition for a name.
+
+        ``name`` is a model, column, source or seed name (``customer_id``), ``label`` is
+        what the business calls it ("Customer"), and ``definition`` says what it means in
+        a sentence. An existing term with the same name is updated. This files a normal
+        proposal that edits openpipeline.yml, keeping the rest of the file as it is, so a
+        person still reviews it before anything is written.
+        """
+        try:
+            edit = add_glossary_term(state.root, name, label, definition)
+        except ValueError as exc:
+            raise ToolError(str(exc)) from exc
+        proposal = store.create(
+            Proposal(
+                title=f"Add glossary term: {label.strip()}",
                 rationale=rationale,
                 author=author,
                 changes=[FileChange(path=edit.path, content=edit.content)],

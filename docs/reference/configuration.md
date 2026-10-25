@@ -22,8 +22,9 @@ win over `openpipeline.yml`.
 
 ## openpipeline.yml
 
-The `openpipeline.yml` file sits next to `dbt_project.yml`. It has two optional
-sections: `rules:` for your [business rules](../guides/business-rules.md) and
+The `openpipeline.yml` file sits next to `dbt_project.yml`. It has three optional
+sections: `rules:` for your [business rules](../guides/business-rules.md),
+`glossary:` for your [business words](../guides/business-words.md), and
 `preview:` for [sample rows](../guides/sample-rows.md).
 
 ```yaml
@@ -47,6 +48,7 @@ rules:
 | Key | What it does |
 | --- | --- |
 | `rules` | A list of business rules. The fields are explained on the [rules file format](../rules.md) page. |
+| `glossary` | A list of terms: `name`, `label`, and optionally `definition` and `aliases`. See [business words](../guides/business-words.md). |
 | `preview.sample_data` | Where sample data lives, relative to the project folder. Same as `--sample-data`, but set once for everyone. |
 | `preview.dialect` | SQL dialect of the project. Same as `--dialect`. |
 
