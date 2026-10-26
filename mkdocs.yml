@@ -1,5 +1,5 @@
 site_name: OpenPipeline
-site_description: See what your dbt project does, in plain English. Review every change before it lands.
+site_description: "From SELECT * to plain English. Agents propose, owners approve: every dbt change reviewed before it lands."
 site_url: !ENV [SITE_URL, "https://openpipeline.vercel.app/docs/"]
 site_dir: build/docs
 repo_url: https://github.com/PawanPatil19/openpipeline

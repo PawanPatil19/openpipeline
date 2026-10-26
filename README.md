@@ -1,14 +1,28 @@
 # OpenPipeline
 
-**See what your dbt project does, in plain English. Review every change before it lands.**
+**From SELECT * to plain English.**
+
+OpenPipeline turns every dbt model into a story anyone can read. Every change, from a teammate or an AI agent, goes to the data's owner before it lands.
 
 **[Website](https://openpipeline.vercel.app)** · **[Live demo](https://openpipeline.vercel.app/demo/)** (read-only, nothing to install) · **[Docs](https://openpipeline.vercel.app/docs/)**
 
-OpenPipeline opens a dbt project you already have and gives everyone, not just the
-people who wrote the SQL, a way to understand it and to review changes to it,
-whether a teammate or an AI agent made them. It never runs dbt, never connects to
-your warehouse, and reads and writes plain dbt files, so you can stop using it at
-any time.
+**Agents propose, owners approve.** AI agents are starting to write SQL. OpenPipeline
+lets them, safely: an agent reads your project, checks its idea on sample rows, and
+files a proposal. The owner sees it on the graph, in plain words and business terms,
+and accepts or rejects it. Nothing touches your dbt files until a person says yes.
+
+It opens a dbt project you already have. It never runs dbt, never connects to your
+warehouse, and reads and writes plain dbt files, so you can stop using it at any time.
+
+### How a change lands
+
+1. **Propose.** A teammate opens a pull request, or an agent calls `propose_change`
+   through the MCP server.
+2. **Understand.** OpenPipeline shows what the change does in plain English (or in
+   your own business words), which models and columns it touches downstream, and
+   which business rules and owners are involved.
+3. **Approve.** The owner accepts or rejects it, with comments. Only then is a file
+   written.
 
 ![A model open in OpenPipeline: its plain-English story, columns, and rules next to the graph](docs/assets/story.png)
 
@@ -72,7 +86,7 @@ proposals, comments, AI calls) need a token. It makes one up and prints it, or u
 refuses every write. See [Write access and security](docs/reference/security.md).
 
 You do not need dbt installed or warehouse credentials. OpenPipeline reads
-`target/manifest.json` when it exists (run `dbt parse` for the most accurate
+`target/manifest.json` when it exists (run `dbt compile` for the most accurate
 results) and otherwise reads your SQL and YAML files directly.
 
 Optional extras:

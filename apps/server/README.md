@@ -1,7 +1,8 @@
 # openpipeline
 
-See what your dbt project does, in plain English, and review every change before
-it lands. This package is the OpenPipeline app: a command line tool, a web server
+**From SELECT * to plain English.** OpenPipeline turns every dbt model into a story
+anyone can read, and every change, from a teammate or an AI agent, goes to its owner
+before it lands. This package is the OpenPipeline app: a command line tool, a web server
 with the graph UI, and an MCP server for AI agents.
 
 ```bash

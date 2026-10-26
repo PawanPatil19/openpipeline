@@ -6,7 +6,7 @@
     <title>OpenPipeline</title>
     <meta
       name="description"
-      content="See what your dbt project does, in plain English. Review every change before it lands."
+      content="From SELECT * to plain English. OpenPipeline turns every dbt model into a story anyone can read. Every change, from a teammate or an AI agent, goes to the data's owner before it lands."
     />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -26,8 +26,10 @@
 
     <main>
       <section class="hero wrap">
-        <h1>See what your dbt project does, in plain English.</h1>
-        <p class="lede">Review every change before it lands.</p>
+        <h1>From SELECT * to plain English.</h1>
+        <p class="lede">
+          OpenPipeline turns every dbt model into a story anyone can read. Every change, from a teammate or an AI agent, goes to the data's owner before it lands.
+        </p>
         <p class="actions">
           <a class="btn btn--primary" href="/demo/">Try the live demo</a>
           <a class="btn" href="/docs/">Read the docs</a>
@@ -41,6 +43,33 @@
             alt="The OpenPipeline model graph for the jaffle_shop example"
           />
         </figure>
+      </section>
+
+      <section class="wrap" aria-labelledby="how">
+        <h2 id="how">Agents propose, owners approve</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>1. Propose</h3>
+            <p>
+              A teammate opens a pull request, or an AI agent files a proposal through the MCP
+              server after checking its idea on sample rows.
+            </p>
+          </article>
+          <article class="card">
+            <h3>2. Understand</h3>
+            <p>
+              The change is explained in plain English or your own business words, with every
+              model, column, rule and owner it touches downstream.
+            </p>
+          </article>
+          <article class="card">
+            <h3>3. Approve</h3>
+            <p>
+              The owner accepts or rejects it on the graph. Nothing is written to your dbt files
+              until a person says yes.
+            </p>
+          </article>
+        </div>
       </section>
 
       <section class="wrap" aria-labelledby="who">
