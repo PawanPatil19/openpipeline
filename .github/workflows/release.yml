@@ -43,9 +43,33 @@ jobs:
           name: dist
           path: dist/
 
-  pypi:
-    name: Publish to PyPI
+  # PyPI only accepts one pending publisher per repository, workflow and
+  # environment, so each package publishes from its own environment. Core goes
+  # first because openpipeline pins the exact openpipeline-core version.
+  pypi-core:
+    name: Publish openpipeline-core to PyPI
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi-core
+      url: https://pypi.org/project/openpipeline-core/
+    permissions:
+      id-token: write # Trusted publishing, so no API token is stored in the repo.
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Keep only the openpipeline-core files
+        run: mkdir upload && mv dist/openpipeline_core-[0-9]* upload/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+
+  pypi:
+    name: Publish openpipeline to PyPI
+    needs: [build, pypi-core]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment:
@@ -58,25 +82,55 @@ jobs:
         with:
           name: dist
           path: dist/
+      - name: Keep only the openpipeline files
+        run: mkdir upload && mv dist/openpipeline-[0-9]* upload/
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+
+  testpypi-core:
+    name: Rehearse openpipeline-core on TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.testpypi
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi-core
+      url: https://test.pypi.org/project/openpipeline-core/
+    permissions:
+      id-token: write # Trusted publishing, so no API token is stored in the repo.
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Keep only the openpipeline-core files
+        run: mkdir upload && mv dist/openpipeline_core-[0-9]* upload/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
 
   testpypi:
-    name: Rehearse on TestPyPI
-    needs: build
+    name: Rehearse openpipeline on TestPyPI
+    needs: [build, testpypi-core]
     if: github.event_name == 'workflow_dispatch' && inputs.testpypi
     runs-on: ubuntu-latest
     environment:
       name: testpypi
       url: https://test.pypi.org/project/openpipeline/
     permissions:
-      id-token: write
+      id-token: write # Trusted publishing, so no API token is stored in the repo.
     steps:
       - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
+      - name: Keep only the openpipeline files
+        run: mkdir upload && mv dist/openpipeline-[0-9]* upload/
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: upload/
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
 

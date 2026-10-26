@@ -34,13 +34,18 @@ same check against the tag and stops if anything differs.
 
 These need a repository admin and only have to be done once, before the first tag.
 
-- **PyPI trusted publishing.** On PyPI, add a "pending publisher" for both
-  `openpipeline` and `openpipeline-core`: owner `PawanPatil19`, repository
-  `openpipeline`, workflow `release.yml`, environment `pypi`. The first release
-  creates each project. No API token is stored in GitHub.
-- **GitHub environment.** Create an environment named `pypi` under
-  Settings > Environments. Adding yourself as a required reviewer gives every
-  release a final manual approval.
+- **PyPI trusted publishing.** On PyPI, add a "pending publisher" for each
+  package, with owner `PawanPatil19`, repository `openpipeline` and workflow
+  `release.yml`:
+  - `openpipeline-core` with environment `pypi-core`
+  - `openpipeline` with environment `pypi`
+
+  PyPI refuses two pending publishers with the same repository, workflow and
+  environment, which is why each package has its own environment. The first
+  release creates each project. No API token is stored in GitHub.
+- **GitHub environments.** Create environments named `pypi-core` and `pypi`
+  under Settings > Environments. Adding yourself as a required reviewer gives
+  every release a final manual approval.
 - **GHCR visibility.** The first image is pushed as a private package. After it
   appears, make `openpipeline` public under the repository's Packages settings so
   `docker pull ghcr.io/pawanpatil19/openpipeline` works without logging in.
@@ -58,8 +63,9 @@ The version is 0.x on purpose: the project is young and names may still change.
 2. Confirm the one-time setup above is done. A missing PyPI publisher fails the
    release after the tag is pushed.
 3. Optional but recommended: rehearse on TestPyPI. Add the same two pending
-   publishers on <https://test.pypi.org> with environment `testpypi`, create a
-   `testpypi` environment in GitHub, then run the Release workflow by hand from
+   publishers on <https://test.pypi.org>, with environments `testpypi-core`
+   (for `openpipeline-core`) and `testpypi` (for `openpipeline`), create those two
+   environments in GitHub, then run the Release workflow by hand from
    `main` (Actions > Release > Run workflow) with "testpypi" ticked. Check
    `pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ openpipeline==0.1.0`.
 4. Run `python3 scripts/bump_version.py --check 0.1.0`. It should print nothing.
@@ -69,7 +75,7 @@ The version is 0.x on purpose: the project is young and names may still change.
    fresh virtual environment and run `openpipeline demo --no-serve` to confirm the
    example ships inside them.
 7. Tag and push: `git tag v0.1.0 && git push origin main v0.1.0`.
-8. Approve the `pypi` environment when GitHub asks. Wait for the PyPI, Docker, and
+8. Approve the `pypi-core` and `pypi` environments when GitHub asks. Wait for the PyPI, Docker, and
    GitHub release jobs to finish.
 9. Make the GHCR package public if this is the first image.
 10. Try it from scratch: `pip install openpipeline==0.1.0` and `openpipeline demo`,
