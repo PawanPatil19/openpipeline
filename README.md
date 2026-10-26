@@ -2,7 +2,7 @@
 
 **See what your dbt project does, in plain English. Review every change before it lands.**
 
-Live demo: <https://openpipeline.vercel.app/demo/>
+**[Website](https://openpipeline.vercel.app)** · **[Live demo](https://openpipeline.vercel.app/demo/)** (read-only, nothing to install) · **[Docs](https://openpipeline.vercel.app/docs/)**
 
 OpenPipeline opens a dbt project you already have and gives everyone, not just the
 people who wrote the SQL, a way to understand it and to review changes to it,
