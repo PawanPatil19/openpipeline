@@ -1,6 +1,6 @@
 # OpenPipeline
 
-**See what your dbt project does, in plain English. Review every change before it lands.**
+**From SELECT * to plain English.** Every dbt model as a story anyone can read. Every change, from a teammate or an AI agent, approved by its owner before it lands.
 
 ![The OpenPipeline model graph for the jaffle_shop example](assets/graph.png)
 
