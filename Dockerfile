@@ -11,7 +11,7 @@ COPY apps/web apps/web
 RUN pnpm --filter @openpipeline/web build
 
 # --- 2. Install the Python app into a virtualenv ------------------------------
-FROM python:3.13-slim AS app
+FROM python:3.15-slim AS app
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
@@ -24,7 +24,7 @@ COPY --from=web /src/apps/server/src/openpipeline/static apps/server/src/openpip
 RUN uv sync --locked --no-dev --no-editable --package openpipeline --extra preview --extra ai
 
 # --- 3. Small runtime image ---------------------------------------------------
-FROM python:3.13-slim
+FROM python:3.15-slim
 LABEL org.opencontainers.image.title="OpenPipeline" \
       org.opencontainers.image.description="Explain and review dbt projects" \
       org.opencontainers.image.source="https://github.com/PawanPatil19/openpipeline" \
