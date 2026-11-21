@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- 1. Build the web UI ------------------------------------------------------
-FROM node:22-slim AS web
+FROM node:26-slim AS web
 WORKDIR /src
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
